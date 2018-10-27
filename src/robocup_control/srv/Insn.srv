@@ -1,0 +1,8 @@
+uint16 motor1
+uint16 motor2
+uint16 motor3
+uint16 motor4
+bool kick
+bool dribble
+---
+bool confirm

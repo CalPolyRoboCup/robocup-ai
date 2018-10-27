@@ -1,0 +1,8 @@
+bool plz
+---
+uint16 encoder1
+uint16 encoder2
+uint16 encoder3
+uint16 encoder4
+bool kicker_ready
+bool dribble_plz

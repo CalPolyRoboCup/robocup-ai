@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(robocup_control)
+project(sensor_processing)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -11,10 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  hardware_interface
-  controller_manager
-  message_generation
-  #joint_limits_interface
 )
 
 ## System dependencies are found with CMake's conventions
@@ -58,11 +54,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  Insn.srv
-  Data.srv
-)
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -72,10 +68,10 @@ add_service_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -107,17 +103,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  #LIBRARIES robocup_control
-  CATKIN_DEPENDS 
-  roscpp 
-  rospy 
-  std_msgs
-  message_runtime
-  hardware_interface
-  controller_manager
-  #joint_limits_interface
-  #DEPENDS system_lib
+#  INCLUDE_DIRS include
+#  LIBRARIES sensor_processing
+#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  DEPENDS system_lib
 )
 
 ###########
@@ -127,23 +116,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+# include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}
-  src/player_hw_interface.cpp
-  src/dummy_service.cpp
-)
-
-#add_library(drive_controller
-#include/robocup_control/drive_controller.h
-  #src/drive_controller.cpp
-  #)
-target_link_libraries(${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-)
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/sensor_processing.cpp
+# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -153,8 +133,8 @@ target_link_libraries(${PROJECT_NAME}
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(dummy_thread src/dummy_thread.cpp)
-add_executable(player_thread src/player_controller_async.cpp)
+# add_executable(${PROJECT_NAME}_node src/sensor_processing_node.cpp)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -163,22 +143,13 @@ add_executable(player_thread src/player_controller_async.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
+# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(
-  dummy_thread
-  ${catkin_LIBRARIES}
-  ${PROJECT_NAME}
-)
+# target_link_libraries(${PROJECT_NAME}_node
+#   ${catkin_LIBRARIES}
+# )
 
-target_link_libraries(
-  player_thread
-  ${catkin_LIBRARIES}
-  ${PROJECT_NAME}
-)
-
-add_dependencies(dummy_thread robocup_control_gencpp)
-add_dependencies(player_thread robocup_control_gencpp)
 #############
 ## Install ##
 #############
@@ -194,32 +165,32 @@ add_dependencies(player_thread robocup_control_gencpp)
 # )
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_node
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark cpp header files for installation
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h"
-  PATTERN ".svn" EXCLUDE
-)
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-#install(FILES
-  # myfile1
-  # myfile2
-  # DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  #)
+# install(FILES
+#   # myfile1
+#   # myfile2
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
 
 #############
 ## Testing ##
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_robocup_control.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_sensor_processing.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

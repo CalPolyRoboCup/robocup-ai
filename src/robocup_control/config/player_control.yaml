@@ -1,0 +1,29 @@
+player:
+  # Publish all joint states
+  joint_state_controller:
+    type: joint_state_controller/joint_state_controller
+    publish_rate: 60
+
+  # Drive Controller
+  drive_controller:
+    joints:
+      - motor_1
+      - motor_2
+      - motor_3
+      - motor_4
+    motor_controller_1:
+      type: effort_controllers/JointVelocityController
+      joint: motor_1
+      pid: {p: 100.0, i: 0.01, d: 10.0}
+    motor_controller_2:
+      type: effort_controllers/JointVelocityController
+      joint: motor_2
+      pid: {p: 100.0, i: 0.01, d: 10.0}
+    motor_controller_3:
+      type: effort_controllers/JointVelocityController
+      joint: motor_3
+      pid: {p: 100.0, i: 0.01, d: 10.0}
+    motor_controller_4:
+      type: effort_controllers/JointVelocityController
+      joint: motor_4
+      pid: {p: 100.0, i: 0.01, d: 10.0}
