@@ -1,0 +1,3 @@
+run test_move_to.py with python2 while GRsim is running. 
+This should serve as an example of how to use Nathan Pestes' networking code
+and the action interface.
