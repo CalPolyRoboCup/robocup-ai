@@ -13,16 +13,35 @@
 #include <controller_manager/controller_manager.h>
 #include <ros/ros.h>
 
+/**
+ * \brief Hardware interface for RoboCup robots
+ */
+
+namespace robocup_control
+{
+
 class PlayerHWInterface : public hardware_interface::RobotHW
 {
   public:
+    /**
+     * \brief Constructor
+     * \param nh - Node handle for topics and services
+     */
     PlayerHWInterface(ros::NodeHandle nh);
-    //~PlayerHWInterface();
+    
+    /** \brief Destructor */
+    virtual ~PlayerHWInterface() {}
+    
+    /** \brief Initalize interface */
     bool init();
+    
+    /** \brief Read robot joint states */
     void read();
+    
+    /** \brief Write new robot joint states */
     void write();
 
-  private:
+  protected:
     // hardware interfaces
     hardware_interface::JointStateInterface jnt_st_interface;
     hardware_interface::VelocityJointInterface jnt_vel_interface;
@@ -40,10 +59,16 @@ class PlayerHWInterface : public hardware_interface::RobotHW
 
     //parameters for interface
     std::vector<std::string> joint_names;
-    int num_joints;
-    std::vector<double> cmd;
+    std::size_t num_joints;
+    
+    //joint variables
     std::vector<double> pos;
     std::vector<double> vel;
     std::vector<double> eff;
+
+    //joint commands
+    std::vector<double> vel_cmd;
 };
+
+}
 #endif /* !PLAYER_HW_INTERFACE_H */

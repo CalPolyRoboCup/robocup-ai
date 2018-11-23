@@ -9,28 +9,33 @@
 #define DRIVE_CONTROLLER_H
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <pluginlib/class_list_marcos.h>
-#include <geometry_msgs/Pose2D.h>
-#include <QUDPSocket>
+#include <pluginlib/class_list_macros.h>
+#include <geometry_msgs/Pose.h>
+#include <ros/ros.h>
 
-namespace drive_controller_ns
+namespace robocup_control
 {
-class DriveController : public controller::Controller<hardware_interface::JointVelocityInterface>
-{
-public:
-  DriveController();
-  bool init();
-  void update(const ros::Time& time, const ros::Duration period);
-  void starting(const ros::Time& time);
-  void stopping(const ros::Time& time);
+  class DriveController : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
+  {
+    public:
+      bool init(hardware_interface::VelocityJointInterface* hw, ros::NodeHandle& h);
+      void update(const ros::Time& time, const ros::Duration& period);
+      void starting(const ros::Time& time);
+      void stopping(const ros::Time& time);
 
-private:
-  int16_t x;
-  int16_t y;
-  int8_t angle;
-  void handleDriveCommand(const geometry_msgs::Pose2D pose);
-};
-PLUGINLIB_DECLARE_CLASS(package_name, DriveController, drive_controller_ns::DriveController,
-                        controller_interface::ControllerBase);
+    private:
+      float x;
+      float y;
+      float angle;
+      //std::vector<hardware_interface::JointHandle> drive_motors;
+      std::vector<std::string> joint_names;
+      int num_joints;
+      hardware_interface::JointHandle motor_1;
+      hardware_interface::JointHandle motor_2;
+      hardware_interface::JointHandle motor_3;
+      hardware_interface::JointHandle motor_4;
+      ros::Subscriber pose_sub;
+      void handleDriveCommand(const geometry_msgs::Pose pose);
+  };
 }
 #endif /* !DRIVE_CONTROLLER_H */

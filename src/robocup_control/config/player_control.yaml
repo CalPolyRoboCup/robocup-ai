@@ -1,11 +1,12 @@
-player:
+robocup_control:
   # Publish all joint states
   joint_state_controller:
-    type: joint_state_controller/joint_state_controller
+    type: joint_state_controller/JointStateController
     publish_rate: 60
 
   # Drive Controller
   drive_controller:
+    type: robocup_control/DriveController
     joints:
       - motor_1
       - motor_2

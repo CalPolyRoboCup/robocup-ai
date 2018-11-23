@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  geometry_msgs
   hardware_interface
   controller_manager
   message_generation
@@ -113,6 +114,7 @@ catkin_package(
   roscpp 
   rospy 
   std_msgs
+  geometry_msgs
   message_runtime
   hardware_interface
   controller_manager
@@ -134,7 +136,9 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
   src/player_hw_interface.cpp
+  src/player_control_loop.cpp
   src/dummy_service.cpp
+  src/drive_controller.cpp
 )
 
 #add_library(drive_controller
@@ -154,7 +158,8 @@ target_link_libraries(${PROJECT_NAME}
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(dummy_thread src/dummy_thread.cpp)
-add_executable(player_thread src/player_controller_async.cpp)
+add_executable(player_thread src/main.cpp)
+add_executable(pose_thread src/dummy_pose_pub.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -177,8 +182,14 @@ target_link_libraries(
   ${PROJECT_NAME}
 )
 
+target_link_libraries(
+  pose_thread
+  ${catkin_LIBRARIES}
+)
+
 add_dependencies(dummy_thread robocup_control_gencpp)
 add_dependencies(player_thread robocup_control_gencpp)
+add_dependencies(pose_thread robocup_control_gencpp)
 #############
 ## Install ##
 #############
@@ -206,6 +217,9 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
+
+install(FILES drive_controller_plugins.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 #install(FILES
