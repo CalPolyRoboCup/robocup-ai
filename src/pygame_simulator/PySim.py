@@ -152,7 +152,7 @@ class PYsim:
       
     action = robot.run_action()
     if action == None:
-      return 1
+      action = [0,0,0,0,0]
       
     if robot.kick_cooldown > 0:
       robot.kick_cooldown -= 1
