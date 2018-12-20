@@ -1,0 +1,9 @@
+run test_move_to.py with python2 while GRsim is running. 
+
+the protobuf files should be built it the GR_sim_networking/proto folder
+  protoc *.proto --python_out=.
+
+for step by step instructions for installing protoc see the protobuf github repository 
+
+This should serve as an example of how to use Nathan Pestes' networking code
+and the action interface.

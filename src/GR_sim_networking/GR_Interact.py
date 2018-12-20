@@ -1,18 +1,26 @@
+import sys
+#replace this with your path to robocup-ai
+sys.path.insert(0, '/home/nathan/Documents/robocup2018/robocup-ai/src')
+from basic_skills.robot import *
+
+#for vector math
 import numpy as np
 
+#for netowrorking
 import socket
 import struct
-import time
-import math
-import sys
-sys.path.insert(0, './proto')
 
-import grSim_Commands_pb2
-import grSim_Replacement_pb2
-import grSim_Packet_pb2
-import messages_robocup_ssl_detection_pb2
-import messages_robocup_ssl_wrapper_pb2
-import referee_pb2
+#current system time
+import time
+#to import proto
+
+#protobuf implamentations expected in directory "proto" from run dirrectory
+import GR_sim_networking.proto.grSim_Commands_pb2 as grSim_Commands_pb2
+import GR_sim_networking.proto.grSim_Replacement_pb2 as grSim_Replacement_pb2
+import GR_sim_networking.proto.grSim_Packet_pb2 as grSim_Packet_pb2
+import GR_sim_networking.proto.messages_robocup_ssl_detection_pb2 as messages_robocup_ssl_detection_pb2
+import GR_sim_networking.proto.messages_robocup_ssl_wrapper_pb2 as messages_robocup_ssl_wrapper_pb2
+import GR_sim_networking.proto.referee_pb2 as referee_pb2
 import matplotlib.pyplot as plt
 
 '''
@@ -24,7 +32,6 @@ kickspeedz 1
 veltangent 2
 velnormal  3
 velangular 4
-spinner    5     --thresholds at .5
 
 output:
 ball           x, y, observed
@@ -52,115 +59,98 @@ class ball:
     self.first = True
     self.last_timestamp = 0
   def update(self, nloc, obs, time_elapsed = 1.0/60, time_stamp = None):
-    
-    if (time_stamp == None) or (time_stamp != self.last_timestamp):
-      self.observed = obs
-      if obs and np.abs(nloc[0]) < 6000 and np.abs(nloc[1]) < 4000:
-        if self.first:
-          self.first = False
-          self.velocity = np.array([0,0])
-          self.loc = nloc
-        else:
-          #print(time_elpsed, "time")
-          #print("got to", self.loc, self.velocity, nloc)
-          self.last_time = time.time()
-          self.velocity = (self.velocity * self.smoothing + 
-            (1-self.smoothing) * (nloc - self.loc)/time_elapsed)
-          self.loc = ((self.loc + self.velocity*time_elapsed) * self.smoothing + 
-            (1-self.smoothing) * (nloc))
-      #else:
-        #print("unobs", self.velocity, self.loc, nloc)
-        #self.loc = (self.loc + self.velocity*time_elapsed)
-
-def min_angle(angle):
-  while 1:
-    if angle > math.pi:
-      angle -= 2*math.pi
-    elif angle < -math.pi:
-      angle += 2*math.pi
-    else:
-      return angle
-
-class robot:
-  def __init__(self, is_blue, idNum):
-    self.loc = np.array([0,0])
-    self.rot = 0
-    self.rot_vel = 0
-    self.observed = 0
-    self.velocity = np.array([0,0])
-    self.is_blue = is_blue
-    self.id = idNum
-    self.last_time = time.time()
-    #I don't want to make a RNN because it slows down training
-    #I want to use a low pass running average filter to get 
-    #velocity and feed it to a linear model maybe convolutional 
-    #if we want to share weights for low level robot operations
-    self.smoothing = 0.5
-    self.first = True
-    self.last_timestamp = 0
-  def update(self, nloc, nrot, obs, time_elapsed = 1.0/60, time_stamp = None):
-    #print("up")
-    #print(time_stamp, self.last_timestamp, (time_stamp == None) or (time_stamp != self.last_timestamp))
-    
     self.observed = obs
-    if ((time_stamp == None) or (time_stamp != self.last_timestamp)) and obs and np.abs(nloc[0]) < 6000 and np.abs(nloc[1]) < 4000:
-      #print("update", obs, self.id, self.is_blue, self.loc, nloc)      
+    if (((time_stamp == None) or (time_stamp != self.last_timestamp)) and 
+        obs and np.abs(nloc[0]) < 6000 and np.abs(nloc[1]) < 4000):    
       self.last_timestamp = time_stamp
       self.velocity = (self.velocity * self.smoothing + 
         (1-self.smoothing) * (nloc - self.loc)/time_elapsed)
-      delta_rot = min_angle(nrot - self.rot)
-      self.rot_vel = (self.rot_vel * self.smoothing + 
-        (1-self.smoothing) * (delta_rot)/time_elapsed)
       self.loc = ((self.loc + self.velocity*time_elapsed) * self.smoothing + 
         (1-self.smoothing) * (nloc))
-      self.rot = ((self.rot + self.rot_vel*time_elapsed) * self.smoothing + 
-        (1-self.smoothing) * (nrot))
-    
-    
 
+def min_angle(angle):
+  while 1:
+    if angle > np.pi:
+      angle -= 2*np.pi
+    elif angle < -np.pi:
+      angle += 2*np.pi
+    else:
+      return angle
+    
 class GRsim:
   def __init__(self, max_bots_per_team):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # on this port, listen ONLY to MCAST_GRP
     sock.bind((MCAST_GRP, MCAST_PORT))
-
+    
     mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     self.max_bots_per_team = max_bots_per_team
     self.sock = sock
-    self.blue_robots = [robot(True, i) for i in range(self.max_bots_per_team)]
-    self.yellow_robots = [robot(False, i) for i in range(self.max_bots_per_team)]
+    self.blue_robots = [robot(True, i, self) for i in range(self.max_bots_per_team)]
+    self.yellow_robots = [robot(False, i, self
+) for i in range(self.max_bots_per_team)]
     self.ball = ball()
+  #use matplotlib to dispaly current game state
+  #this function is slow you should not call it every frame  
   def display(self, keypoints = []):
     plt.figure(1)
-    
+    #plot important points
     plt.scatter([kp[0] for kp in keypoints], [kp[1] for kp in keypoints], color = "red", s = 250)
 
-    plt.scatter([br.loc[0] for br in self.blue_robots], [br.loc[1] for br in self.blue_robots], color = 'b', s = 100)
-    plt.scatter([yr.loc[0] for yr in self.yellow_robots], [yr.loc[1] for yr in self.yellow_robots], color = 'y', s = 100)
+    #plot blue robot locations
+    plt.scatter([br.loc[0] for br in self.blue_robots], [br.loc[1] for br in self.blue_robots], 
+      color = 'b', s = 100)
+    #plot yellow robot locations
+    plt.scatter([yr.loc[0] for yr in self.yellow_robots], [yr.loc[1] for yr in self.yellow_robots],
+      color = 'y', s = 100)
+
     for br in self.blue_robots:
-      plt.plot([br.loc[0], br.loc[0] + 0.2*br.velocity[0]], [br.loc[1], br.loc[1] + 0.2*br.velocity[1]], color = 'black', linewidth = 3)
-      plt.plot([br.loc[0] + 170*np.cos(br.rot)], [br.loc[1] + 170*np.sin(br.rot)], color = 'b', linewidth = 2)
+      #plot velocity line
+      plt.plot([br.loc[0], br.loc[0] + 0.2*br.velocity[0]], 
+               [br.loc[1], br.loc[1] + 0.2*br.velocity[1]], color = 'black', linewidth = 3)
+      #plot rotation line  #TODO fix    
+      plt.plot([br.loc[0] + 300*np.cos(br.rot)], 
+               [br.loc[1] + 300*np.sin(br.rot)], color = 'b', linewidth = 2)
+
     for yr in self.yellow_robots:
-      plt.plot([yr.loc[0], yr.loc[0] + 0.2*yr.velocity[0]], [yr.loc[1], yr.loc[1] + 0.2*yr.velocity[1]], color = 'black', linewidth = 3)
-      plt.plot([yr.loc[0] + 170*np.cos(yr.rot)], [yr.loc[1] + 170*np.sin(yr.rot)], color = 'yellow', linewidth = 2)
- 
+      #plot velocity line
+      plt.plot([yr.loc[0], yr.loc[0] + 0.2*yr.velocity[0]], 
+               [yr.loc[1], yr.loc[1] + 0.2*yr.velocity[1]], color = 'black', linewidth = 3)
+      #plot rotation line  #TODO fix 
+      plt.plot([yr.loc[0] + 170*np.cos(yr.rot)], 
+               [yr.loc[1] + 170*np.sin(yr.rot)], color = 'yellow', linewidth = 2)
+    #plot ball location
     plt.scatter([self.ball.loc[0]], [self.ball.loc[1]], color = 'g')
-    plt.plot([self.ball.loc[0], self.ball.loc[0] + 0.2*self.ball.velocity[0]], [self.ball.loc[1], self.ball.loc[1] + 0.2*self.ball.velocity[1]], color = 'green', linewidth = 3)
+    #plot ball velocity line    
+    plt.plot([self.ball.loc[0], self.ball.loc[0] + 0.2*self.ball.velocity[0]], 
+             [self.ball.loc[1], self.ball.loc[1] + 0.2*self.ball.velocity[1]], 
+             color = 'green', linewidth = 3)
+    #show plot    
     plt.show(block = False)
     plt.pause(1E-12)
     plt.clf()
-  def step(self, action_blue, action_yellow):
+  #advance simulation first take
+  #this function does not agree with current action architecture
+  def step(self):
     self.sync_with_sim()
-    blue_command = self.make_command(action_blue, True)
-    yellow_command = self.make_command(action_yellow, False)
-    blue_serialized = blue_command.SerializeToString()
-    yellow_serialized = yellow_command.SerializeToString()
-    self.sock.sendto(blue_serialized, (COMMAND_GRP, COMMAND_PORT))
-    self.sock.sendto(yellow_serialized, (COMMAND_GRP, COMMAND_PORT))
-    #print("step")
+    for blue_robot in self.blue_robots:
+      blue_command = self.make_command(blue_robot)
+      if None == blue_command:
+        continue
+      blue_serialized = blue_command.SerializeToString()
+      self.sock.sendto(blue_serialized, (COMMAND_GRP, COMMAND_PORT))
+    for yellow_robot in self.yellow_robots:
+      yellow_command = self.make_command(yellow_robot)
+      if None == yellow_command:
+        continue
+      yellow_serialized = yellow_command.SerializeToString()
+      self.sock.sendto(yellow_serialized, (COMMAND_GRP, COMMAND_PORT))
     return self.get_state()
+
+  #sends a reset command to GRsim based on the current state
+  #TODO? only update observed values
   def push_state(self):
     packet = grSim_Packet_pb2.grSim_Packet()
     reset = packet.replacement
@@ -183,8 +173,8 @@ class GRsim:
       yellow_init.dir= yellow_bot.rot;
       yellow_init.id = yellow_bot.id;
       yellow_init.yellowteam = True;
-    #print("switch")
     self.sock.sendto(packet.SerializeToString(), (COMMAND_GRP, COMMAND_PORT))
+  #creates single vector representation of current belief of state   
   def get_state(self):
     state_blue = []
     state_yellow = []
@@ -210,32 +200,28 @@ class GRsim:
     state_blue[4:10+6*self.max_bots_per_team] = state_yellow[10+6*self.max_bots_per_team:]
     state_blue[10+6*self.max_bots_per_team:10+12*self.max_bots_per_team] = state_yellow[4:10+6*self.max_bots_per_team]
     return state_blue, state_yellow
- 
-  def make_command(self, actions, for_blue_team):
-    #make command packet
+  #creates protobuf command packet from action vector
+  def make_command(self, robot):
+    actions = robot.run_action()
+    if actions == None:
+      return None
     packet = grSim_Packet_pb2.grSim_Packet()
     packet.commands.timestamp = time.time()
-    if for_blue_team:
-      packet.commands.isteamyellow = False
-    else:
-      packet.commands.isteamyellow = True 
-    i = 0
-    for r in range(self.max_bots_per_team):
-      #for each robot add a command
-      comm = packet.commands.robot_commands.add()
-      comm.id = i      
-      comm.kickspeedx = actions[0+i*5]
-      comm.kickspeedz = actions[1+i*5]
-      comm.veltangent = actions[2+i*5]
-      comm.velnormal = actions[3+i*5]
-      comm.velangular = actions[4+i*5]
+    packet.commands.isteamyellow = not robot.is_blue
+    comm = packet.commands.robot_commands.add()
+    comm.id = robot.id 
+    comm.kickspeedx = actions[0]
+    comm.kickspeedz = actions[1]
+    comm.veltangent = actions[2]
+    comm.velnormal = actions[3]
+    comm.velangular = actions[4]
       
-      #spinner always on
-      comm.spinner = True
-      #use velocity control
-      comm.wheelsspeed = False
-      i+=1
+    #spinner always on
+    comm.spinner = True
+    #use velocity control
+    comm.wheelsspeed = False
     return packet
+  #reads the 4 cammera updates. Ignores geometry packets
   def sync_with_sim(self):  
     for i in range(4):    
       data = self.sock.recv(1024)
@@ -246,12 +232,12 @@ class GRsim:
         data = self.sock.recv(1024)
         packet.ParseFromString(data)
       self.update_from_proto(packet)
+  #reads a packet and updates belief to match  
   def update_from_proto(self, packet):
     frame = packet.detection
-    #print(frame.frame_number, len(frame.balls), len(frame.robots_blue), len(frame.robots_yellow))
-    #update the ball
     if (len(frame.balls) != 0):
-      self.ball.update(np.array([frame.balls[0].x,frame.balls[0].y]), 1, time_stamp = frame.frame_number)
+      self.ball.update(np.array([frame.balls[0].x,frame.balls[0].y]), 
+        1, time_stamp = frame.frame_number)
     else:
       self.ball.update(np.array([0, 0]), 0)
 
@@ -259,7 +245,6 @@ class GRsim:
     yellow_observed = [0 for _ in range(self.max_bots_per_team)]
     #for each instance observed update as observed
     for i in range(len(frame.robots_blue)):
-      #print(i)
       robo = frame.robots_blue[i]
       self.blue_robots[robo.robot_id].update(
         np.array([robo.x, robo.y]), robo.orientation, 1, time_stamp = frame.frame_number)
@@ -277,11 +262,14 @@ class GRsim:
       if not yellow_observed[i]:
         self.yellow_robots[i].update(np.array([0,0]), 0, 0)
 
+#simple test code 
 if __name__ == "__main__":
   max_bots_per_team = 8
   game = GRsim(max_bots_per_team)
+  for i in game.blue_robots:
+    i.add_action(sample_action())
   for j in range(10000):
-    game.step([i%2 for i in range(5*max_bots_per_team)], [i%2 for i in range(5*max_bots_per_team)])
-    #if j%200 == 0:
-      #game.display()
+    game.step()
+    if j%200 == 0:
+      game.display()
     
