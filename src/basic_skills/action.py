@@ -4,6 +4,7 @@ class action:
     self.robot = False
     #the result of the last call to run
     self.action = [0,0,0,0,0]
+    self.game = False
   def run(self, game):
     self.action = [0,0,0,0,0]
     return self.action
@@ -11,6 +12,7 @@ class action:
     #run when action added to robot
     #use for one time calculations
     self.robot = robot
+    self.game = game
   def end(self):
     #clean up
     pass
