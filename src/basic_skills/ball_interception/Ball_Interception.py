@@ -6,7 +6,6 @@ sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
 from basic_skills.action import *
 from basic_skills.move_to.move_to import *
 from basic_skills.helper_functions import *
-from matplotlib.widgets import Slider, Button, RadioButtons
 
 class intercept_ball(action):
   def __init__(self):
@@ -69,7 +68,7 @@ class intercept_ball(action):
 
 if __name__ == "__main__":
   intercept = intercept_ball()
-  game = GRsim(1)
+  game = Pysim(1)
   game.blue_robots[0].add_action(intercept)
   loc = np.array([0,0])
   intercept.robot.loc = loc
