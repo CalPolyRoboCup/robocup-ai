@@ -1,2 +1,2 @@
 from . import *
-__all__ = ["PySim", "GR_Interact"]
+__all__ = ["PySim"]
