@@ -1,8 +1,9 @@
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/home/nathan/Documents/robocup2018/robocup-ai/src')
+sys.path.insert(0, '/home/wulfkine/repos/robocup-ai/src')
 from basic_skills.action import *
 from basic_skills.helper_functions import *
+from basic_skills.rrt.rrt import *
 
 import numpy as np
 
@@ -24,6 +25,14 @@ class move_to(action):
   def set_target(self, target_loc, target_rot):
     self.target_loc = target_loc
     self.target_rot = target_rot
+    rrt_strategy = rrt(
+            [self.robot.loc[0], self.robot.loc[1]],
+            [target_loc[0], target_loc[1]],
+            [1,1,.2],
+            [0,10])
+    next_Point = rrt_strategy.computerSolutionPath()
+    self.target_loc[0], self.target_loc[1] = next_Point[0], next_Point[1]
+
   def run(self):
     norm_vel, tang_vel = self.PID_loc()
     rot_vel = self.PID_rot()

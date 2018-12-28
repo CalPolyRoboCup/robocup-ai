@@ -18,6 +18,8 @@ randomObstacles =  [ ( random.uniform( obstacleConstraints[0], obstacleConstrain
 myRRT = rrt( [ 1.0 , 1.0 ] ,
         [ 7.0 , 7.0 ] ,
         obstacleWall ,
-            constraints )
+        constraints )
 
-myRRT.computeSolutionPath()
+nextPoint = myRRT.computeSolutionPath()
+print("Next X : ", nextPoint.x)
+print("Next Y : ", nextPoint.y)
