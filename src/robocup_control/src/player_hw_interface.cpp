@@ -63,12 +63,12 @@ namespace robocup_control
     plz.request.plz = true;
     if (data_client.call(plz))
     {
-      ROS_INFO("Receiving data");
-      ROS_INFO("Motor 1: %f, Motor 2: %f, Motor 3: %f, Motor 4: %f", vel[0], vel[1], vel[2], vel[3]);
-      //vel[0] = 50.0;
-      //vel[1] = 150.0;
-      //vel[2] = 250.0;
-      //vel[3] = 350.0;
+      //ROS_INFO("Receiving data");
+      //ROS_INFO("Motor 1: %f, Motor 2: %f, Motor 3: %f, Motor 4: %f", vel[0], vel[1], vel[2], vel[3]);
+      vel[0] =  plz.response.encoder1;
+      vel[1] =  plz.response.encoder2;
+      vel[2] =  plz.response.encoder3;
+      vel[3] =  plz.response.encoder4;
       return;
     }
     else
@@ -80,15 +80,18 @@ namespace robocup_control
   void PlayerHWInterface::write()
   {
     robocup_control::Insn insn;
-    insn.request.motor1 = (uint16_t) motor_1.getCommand();
-    insn.request.motor2 = (uint16_t) motor_2.getCommand();
-    insn.request.motor3 = (uint16_t) motor_3.getCommand(); 
-    insn.request.motor4 = (uint16_t) motor_4.getCommand();
+    insn.request.motor1 =  motor_1.getCommand();
+    insn.request.motor2 =  motor_2.getCommand();
+    insn.request.motor3 =  motor_3.getCommand(); 
+    insn.request.motor4 =  motor_4.getCommand();
     insn.request.kick = true;
     insn.request.dribble = true;
+    insn.request.robot = 0; //figure out numbering scheme later
+    //ROS_INFO("Command 1: %u, Command 2: %u, Command 3: %u, Command 4: %u", 
+        //insn.request.motor1, insn.request.motor2, insn.request.motor3, insn.request.motor4);
     if (cmd_client.call(insn))
     {
-      ROS_INFO("Sending commands");
+      //ROS_INFO("Sending commands");
       return;
     }
     else

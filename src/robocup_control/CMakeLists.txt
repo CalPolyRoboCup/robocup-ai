@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(robocup_control)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -20,8 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
-
+#find_package(Qt5 REQUIRED COMPONENTS Core Network)
+find_package(Protobuf REQUIRED)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -128,17 +128,32 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
+include_directories(${PROTOBUF_INCLUDE_DIRS})
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS 
+  #proto/messages_robocup_ssl_detection.proto
+  #proto/messages_robocup_ssl_geometry.proto
+  #proto/messages_robocup_ssl_wrapper.proto
+  #proto/messages_robocup_ssl_refbox_log.proto
+  proto/grSim_Replacement.proto
+  proto/grSim_Commands.proto
+  proto/grSim_Packet.proto 
+)
+message(STATUS "Protobuf headers: ${PROTO_HDRS}")
+message(STATUS "Catkin includes: ${catkin_INCLUDE_DIRS}")
+message(STATUS "Output dir: ${CMAKE_CURRENT_BINARY_DIR}")
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}
 )
-
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
   src/player_hw_interface.cpp
   src/player_control_loop.cpp
+  #src/robocup_ssl_client.cpp
   src/dummy_service.cpp
   src/drive_controller.cpp
+  ${PROTO_SRCS}
 )
 
 #add_library(drive_controller
@@ -147,6 +162,7 @@ add_library(${PROJECT_NAME}
   #)
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
 )
 
 ## Add cmake target dependencies of the library
@@ -157,7 +173,7 @@ target_link_libraries(${PROJECT_NAME}
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(dummy_thread src/dummy_thread.cpp)
+add_executable(dummy_thread src/dummy_thread.cpp) 
 add_executable(player_thread src/main.cpp)
 add_executable(pose_thread src/dummy_pose_pub.cpp)
 ## Rename C++ executable without prefix

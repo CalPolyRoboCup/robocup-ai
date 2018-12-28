@@ -42,6 +42,8 @@ class PlayerHWInterface : public hardware_interface::RobotHW
     void write();
 
   protected:
+    // robot name
+    std::string name;
     // hardware interfaces
     hardware_interface::JointStateInterface jnt_st_interface;
     hardware_interface::VelocityJointInterface jnt_vel_interface;

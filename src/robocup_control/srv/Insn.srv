@@ -1,7 +1,8 @@
-uint16 motor1
-uint16 motor2
-uint16 motor3
-uint16 motor4
+uint8 robot
+float64 motor1
+float64 motor2
+float64 motor3
+float64 motor4
 bool kick
 bool dribble
 ---

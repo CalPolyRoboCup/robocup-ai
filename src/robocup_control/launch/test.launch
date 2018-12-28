@@ -1,5 +1,5 @@
 <launch>
   <include file="$(find robocup_control)/launch/player_control.launch"/>
-  <node name="test_thread" pkg="robocup_control" type="dummy_thread" ns="/robocup_control" respawn="false" output="log"/>
+  <node name="test_thread" pkg="robocup_control" type="dummy_thread" ns="/robocup_control" respawn="false" output="screen"/>
   <node name="pose_thread" pkg="robocup_control" type="pose_thread" ns="/robocup_control" respawn="false" output="log"/>
 </launch>

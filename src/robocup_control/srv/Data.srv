@@ -1,8 +1,9 @@
 bool plz
 ---
-uint16 encoder1
-uint16 encoder2
-uint16 encoder3
-uint16 encoder4
+uint8 robot
+float64 encoder1
+float64 encoder2
+float64 encoder3
+float64 encoder4
 bool kicker_ready
 bool dribble_plz

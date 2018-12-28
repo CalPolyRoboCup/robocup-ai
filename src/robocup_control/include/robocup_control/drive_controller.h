@@ -24,9 +24,10 @@ namespace robocup_control
       void stopping(const ros::Time& time);
 
     private:
-      float x;
-      float y;
-      float angle;
+      double x;
+      double y;
+      double angle;
+      double update_rate;
       //std::vector<hardware_interface::JointHandle> drive_motors;
       std::vector<std::string> joint_names;
       int num_joints;
@@ -36,6 +37,8 @@ namespace robocup_control
       hardware_interface::JointHandle motor_4;
       ros::Subscriber pose_sub;
       void handleDriveCommand(const geometry_msgs::Pose pose);
+      double calcPID(hardware_interface::JointHandle handle, double command, double p, double i, double d);
+      double saturatedAdd(double x1, double x2, double max);
   };
 }
 #endif /* !DRIVE_CONTROLLER_H */

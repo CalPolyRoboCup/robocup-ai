@@ -7,10 +7,16 @@
 
 #ifndef DUMMY_SERVICE_H
 #define DUMMY_SERVICE_H
+#include <random>
 #include <robocup_control/Insn.h>
 #include <robocup_control/Data.h>
 #include <ros/ros.h>
-// need to include the robocup_control stuff in the package.xml
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include "grSim_Packet.pb.h"
 
 class DummyService
 {
@@ -18,7 +24,11 @@ class DummyService
     ros::NodeHandle n;
     ros::ServiceServer command_srv;
     ros::ServiceServer data_srv;
-
+    //std::vector<double> last_vel;
+    std::vector<double> curr_vel;
+    std::default_random_engine generator;
+    int sock;
+    struct sockaddr_in addr;
     /**
      * @brief sends SPI commands to STM board to actuators
      * @param req a command from the main CPU
@@ -40,7 +50,7 @@ class DummyService
      * @param n NodeHandle for creating services
      */
     DummyService(ros::NodeHandle n);
-    //~DummyService();
+    ~DummyService();
 
     /**
      * @brief callback that handles command from main CPU
