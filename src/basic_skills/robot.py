@@ -1,4 +1,7 @@
-from helper_functions import min_angle
+import sys
+#replace this with your path to robocup-ai
+sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+from basic_skills.helper_functions import min_angle
 import numpy as np
 import time
 
@@ -22,6 +25,7 @@ class robot:
     self.first = True
     self.last_timestamp = 0
     self.action = None
+    self.kick_cooldown = 0
 
   def update(self, nloc, nrot, obs, time_elapsed = 1.0/60, time_stamp = None):
     """updates robot variables nloc - np.array nrot - int obs - ? time_elaspsed - default 1/60 second time_stamp - default None"""
