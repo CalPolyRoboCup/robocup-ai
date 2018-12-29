@@ -1,0 +1,1 @@
+positions robot at ball ready to kick at target_loc
