@@ -78,11 +78,22 @@ namespace robocup_control
   void DriveController::update(const ros::Time& time, const ros::Duration& period)
   {
     ROS_INFO("Running controller update");
+    double pi = 3.14159265;
+    /*
+     * lol, the way the dynamics should work out
     double motor_speed_1 = ((sqrt(2) / -2) * x) + ((sqrt(2) / 2) * y) + angle;
     double motor_speed_2 = ((sqrt(2) / 2) * x) + ((sqrt(2) / 2) * y) + angle;
     double motor_speed_3 = ((sqrt(2) / 2) * x) + ((sqrt(2) / -2) * y) + angle;
     double motor_speed_4 = ((sqrt(2) / -2) * x) + ((sqrt(2) / -2) * y) + angle;
-    ROS_INFO("Commanded speeds: %f, %f, %f, %f", motor_speed_1, motor_speed_2, motor_speed_3, motor_speed_4);
+    */
+    // literally what grSim did
+    // (1.0 / cfg->robotSettings.WheelRadius) * (( (cfg->robotSettings.RobotRadius * vw) - (vx * sin(motorAlpha[0])) + (vy * cos(motorAlpha[0]))) );
+    double motor_speed_1 = (1.0 / 0.0325) * ((0.09 * angle) - ( x * sin(pi/3)) + (y * cos(pi/3)));
+    double motor_speed_2 = (1.0 / 0.0325) * ((0.09 * angle) - ( x * sin((3*pi)/4)) + (y * cos((3*pi)/4)));
+    double motor_speed_3 = (1.0 / 0.0325) * ((0.09 * angle) - ( x * sin((5*pi)/4)) + (y * cos((5*pi)/4)));
+    double motor_speed_4 = (1.0 / 0.0325) * ((0.09 * angle) - ( x * sin((5*pi)/3)) + (y * cos((5*pi)/3)));;
+    ROS_INFO("Commanded speeds: %lf, %lf, %lf, %lf", motor_speed_1, motor_speed_2, motor_speed_3, motor_speed_4);
+    //ROS_INFO("Radius scaling: %lf, Angular component: %lf, X component: %lf, Y component: %lf", (1.0/0.0325), (0.09*angle), (x * sin(pi/3)), (y * cos(pi/3)));
     
     /*ROS_INFO("Motor 1 Calc");
     motor_speed_1 = calcPID(motor_1, motor_speed_1, 6.0, 1.0, 0.0);

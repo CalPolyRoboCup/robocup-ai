@@ -17,8 +17,8 @@ int main(int argc, char** argv)
   while(ros::ok())
   {
     geometry_msgs::Pose pose;
-    pose.position.x = 100.0;
-    pose.position.y = 100.0;
+    pose.position.x = 0.0;
+    pose.position.y = 1.0;
     pose.position.z = 0.0;
     ROS_INFO("Sending new pose: x = %f, y = %f, theta= %f", pose.position.x, pose.position.y, pose.position.z);
     pose_pub.publish(pose);
