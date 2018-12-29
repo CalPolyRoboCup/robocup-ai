@@ -2,12 +2,12 @@ import numpy as np
 import math
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, 'C:/Users/nathan/Documents/robocup-ai/src')
 from basic_skills.action import *
 from basic_skills.move_to.move_to import *
 from basic_skills.cover.cover import *
 from basic_skills.orbit_ball.orbit_ball import *
-from basic_skills.get_open.get_open5b import *
+from basic_skills.get_open.get_open import *
 from basic_skills.ball_interception.Ball_Interception2 import *
 from basic_skills.action_sequence import *
 from basic_skills.helper_functions import *
@@ -15,6 +15,7 @@ from matplotlib.widgets import Slider, Button, RadioButtons
 from pygame_simulator.PySim_noise import *
 from assign_closest import *
   
+#standin for kicking action
 class sudo_kick(action):
   def run(self):
     return [1,0,0,0,0]
@@ -23,18 +24,23 @@ def rate_positions(locations, enemies, important_static_points):
   res = []
   important_passes = []
   for l in locations:
+    #base line value of a robot
     value = 5
     ips = []
     for goal in important_static_points:
       pass_value = rate_pass(l, goal, enemies)
       ips.append(pass_value)
+      #value for being able to pass to this important point
       value += pass_value*10
+    #reduce value for being close to an enemy
     for e in enemies:
       if np.linalg.norm(l - e.loc) < 750:
-        value -= 2
+        value -= 3
+        break
     res.append(value)
     important_passes.append(ips)
   
+  #share values between points so that a robot with no direct shots can be seen to be useful as a passing hub
   passes = []
   for l in locations:
     ipass = []
@@ -69,6 +75,7 @@ def rate_pass(p1, p2, enemies):
   pvec = p1 - p2
   pangle = -math.atan2(pvec[1], pvec[0])
   pmag = np.linalg.norm(pvec)
+  #find the enemy that can best block a shot from p1 to p2
   for e in enemies:
     local = convert_local(e.loc - p2, -pangle)
     if local[0] < 0:
@@ -85,11 +92,10 @@ def rate_pass(p1, p2, enemies):
       worst_local = local
       first = False
       worst_loc = e.loc
+      
   if worst < 0:
     worst = 0
-  
-  safety = 300
-  
+  safety = 400
   if worst > safety:
     worst = safety
   worst = worst/safety
@@ -104,13 +110,11 @@ class strategy:
       self.enemies = game.yellow_robots
       self.my_goal = [-6000,0]
       self.their_goal = [6000,0]
-      self.always_useful = [[-1000, 2000], [-1000, 0], [-1000, -2000], [2000, 2000], [2000, 0], [2000, -2000]]
     else:
       self.enemies = game.blue_robots
       self.allies = game.yellow_robots
       self.my_goal = [6000,0]
       self.their_goal = [-6000,0]
-      self.always_useful = [[1000, 2000], [1000, 0], [1000, -2000], [-2000, 2000], [-2000, 0], [-2000, -2000]]
     self.goalie = self.allies[-1]
     self.allies = self.allies[:-1]
     self.internal_ratings = []
@@ -154,6 +158,7 @@ class strategy:
       if len(enemy_locs) != farthest_back_ind:
         enemy_locs.pop(farthest_back_ind)
       
+      #for each robot cover the closest enemy
       assignments = assign_closest(enemy_locs, available_allies)
       ind = 0
       for a in available_allies:
@@ -179,14 +184,17 @@ class strategy:
           
         ind += 1
   def offensive_strategy(self, exclude = []):
-    #print("attack", self.is_blue)
+    #get free allies
     closest = -1
     if self.game.ball.controler == False:
       closest = assign_closest([self.game.ball.loc], self.allies)[0]
       self.game.add_action(intercept_ball(), closest, self.is_blue)
     free_allies = []
     for i in range(len(self.allies)):
-      if (self.game.ball.controler == False or self.allies[i].id != self.game.ball.controler.id) and i not in exclude and (self.passing == 0 or self.allies[i].id != self.pass_reciever.id) and i != closest:
+      if ((self.game.ball.controler == False or self.allies[i].id != self.game.ball.controler.id) and 
+        i not in exclude and 
+        (self.passing == 0 or self.allies[i].id != self.pass_reciever.id) and 
+        i != closest):
         free_allies.append(self.allies[i])
         
     #print(self.passing, "passing")
@@ -201,7 +209,7 @@ class strategy:
       #two "strikers" set up to make shots
       for fa in free_allies[:-2]:
         if not type(fa.action) is get_open:
-          self.game.add_action(get_open([self.game.ball.loc, self.their_goal],[1,0.5], self.enemies, self.allies), fa.id, self.is_blue)
+          self.game.add_action(get_open([self.game.ball.loc, self.their_goal],[1,0.3], self.enemies, self.allies), fa.id, self.is_blue)
         else:
           fa.action.points = [self.game.ball.loc, self.their_goal]
         fa.role = 0
@@ -219,15 +227,12 @@ class strategy:
     
       
     else:
-      #print("p", end = "")
       self.passing -= 1
-      #self.pass_reciever.add_action(intercept_ball())
       if self.game.ball.controler != False and self.passing < self.pass_wait - 3:
-        #print("reset")
         self.passing = 0
     
     
-    good_pass_threshold = .15
+    good_pass_threshold = .3
     #print()
     #if we have the ball
     if self.game.ball.controler != False and self.game.ball.controler.is_blue == self.is_blue:
@@ -238,34 +243,31 @@ class strategy:
       first = True
       kicking = False
       if goal_shot > good_pass_threshold:
+        #line up for the goal
         best_pass_loc = self.their_goal
         shot_vec = self.their_goal - self.game.ball.controler.loc
-        #print(normalize_angle(self.game.ball.controler.rot), -math.atan2(shot_vec[1], shot_vec[0]), abs(normalize_angle(self.game.ball.controler.rot + math.atan2(shot_vec[1], shot_vec[0]))), abs(normalize_angle(self.game.ball.controler.rot + math.atan2(shot_vec[1], shot_vec[0]))) < .01)
         if abs(normalize_angle(self.game.ball.controler.rot + math.atan2(shot_vec[1], shot_vec[0]))) < .02:
-          pv = self.their_goal - self.game.ball.controler.loc
-          pv_scaleed = pv * 125 / np.linalg.norm(pv)
-          #self.game.ball.loc = self.game.ball.controler.loc + pv_scaleed
           
           print("shoot at goal", goal_shot, self.is_blue, self.game.ball.velocity)
-          self.game.ball_internal.velocity = pv_scaleed*11
-          self.game.add_action(get_open([self.game.ball.loc, self.their_goal], [1,0.5], self.enemies, self.allies), self.game.ball.controler.id, self.is_blue)
+          #shoot at the goal
           self.game.ball.controler.task = 0
           self.passing = 240
           self.game.add_action(sudo_kick(), self.game.ball.controler.id, self.is_blue)
           kicking = True
-          self.pass_decay = 10
       else:
-        controler_value = self.pass_decay + 4
+        #aproximation of the value of having the ball with the current controller
+        controler_value = 6
         for e in self.enemies:
+          #if an enemy is close to you it is bad
           if np.linalg.norm(e.loc - self.game.ball.loc) < 750:
             controler_value -= 10
         values = rate_positions([fa.loc for fa in free_allies], self.enemies, [self.their_goal])
         self.internal_ratings = [(self.game.ball.controler.loc, controler_value)]
           
+        #find the most valuable Allie you can pass to
         for i in range(len(free_allies)):
           pass_rating = rate_pass(self.game.ball.loc, free_allies[i].loc, self.enemies)
           self.internal_ratings.append((free_allies[i].loc, values[i]*pass_rating))
-          #print(pass_rating, good_pass_threshold, values[i] * pass_rating, controler_value, )
           if first or (pass_rating > good_pass_threshold and values[i] * pass_rating > best_value):
             best_pass_loc = free_allies[i].loc
             best_value = values[i] * pass_rating
@@ -273,22 +275,11 @@ class strategy:
             best_allie = free_allies[i]
             first = False
             best_pass_vec = free_allies[i].loc - self.game.ball.controler.loc
-          #print(free_allies[i].id, pass_rating, values[i] * pass_rating)
-        #print(self.game.ball.controler.rot, math.atan2(best_pass_vec[1], best_pass_vec[0])) 
-        if self.pass_decay > 0:
-          self.pass_decay -= .1
-        #print(best_pass_rating > good_pass_threshold, best_value > controler_value, abs(normalize_angle(self.game.ball.controler.rot - math.atan2(best_pass_vec[1], best_pass_vec[0]))) < .1)
+        #if the best shot is good pass
         if best_pass_rating > good_pass_threshold and best_value > controler_value and abs(normalize_angle(self.game.ball.controler.rot + math.atan2(best_pass_vec[1], best_pass_vec[0]))) < .02:
           print("pass to ", free_allies[i].id, self.is_blue, pass_rating)
-          #pv = best_pass_loc - self.game.ball.controler.loc
-          #pv_scaleed = pv * 125 / np.linalg.norm(pv)
-          #self.game.ball.loc = self.game.ball.controler.loc + pv_scaleed
-          #self.game.ball_internal.velocity = pv_scaleed*11
-          #self.game.ball.controler.add_action(pass_to(free_allies[i]))
-          self.pass_decay = 10
           self.passing = self.pass_wait
           self.pass_reciever = best_allie
-          #print(best_allie.id, self.game, self.game.add_action, intercept_ball(), self.is_blue)
           self.game.add_action(intercept_ball(), best_allie.id, self.is_blue)
           best_allie.action.iterations = 0
           self.game.add_action(sudo_kick(), self.game.ball.controler.id, self.is_blue)
