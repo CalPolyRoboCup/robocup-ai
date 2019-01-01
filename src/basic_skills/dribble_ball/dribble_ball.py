@@ -20,8 +20,7 @@ class dribble_ball(action):
         self.target_loc = False
         self.robot_actual_speed = 600
         self.robot_radius = 90
-        self.ball_radius = 25
-        self.ball_control_radius = 26
+        self.ball_radius = 20
 
         self.target_loc = target_loc
         self.target_rot = False
@@ -29,15 +28,15 @@ class dribble_ball(action):
         self.control_ball = False
 
         self.min_contact = .1 #125
-        self.radius = 310
-
-        self.mu = 1
+        self.radius = 150
+        self.mu = 37
+        self.angle_constant = -0.1
 
         #PID
         self.I = 0
         self.D_constant = 0
         self.I_constant = 0
-        self.P_constant = 0.85
+        self.P_constant = 1
 
         self.go_intercept = True
 
@@ -65,56 +64,69 @@ class dribble_ball(action):
         #ensures that the robot is carrier of ball 
         #TODO: subject to change when implementation of game is made
 
-        # if robot is self.game.ball.controler:
-        #     self.go_intercept = False
-        # if robot is not self.game.ball.controler and self.go_intercept: #np.linalg.norm(robot.loc - ball.loc) > self.min_contact and 
-        #     return(self.intercept.run())
-        # else:
-        #     threshold = 0.05
-        #     delta = self.target_loc - robot.loc
-        #     target_angle = math.atan2(delta[1], delta[0]) * -1
-        #     if target_angle < 0:
-        #         target_angle = 2*math.pi + target_angle
-        #     delta_angle = target_angle - self.robot.rot
-            
-        #     increment = self.P_constant * math.atan(math.pow(np.linalg.norm(robot.velocity), 2) / (self.radius * 10 * self.mu))
-        #     if delta_angle > threshold:
-        #         #print("greater than threshold")
-        #         new_theta = robot.rot + increment
-        #         curve_x = self.robot.loc[0] + self.radius * math.sin(new_theta)
-        #         curve_y = self.robot.loc[1] + self.radius * math.cos(new_theta)
-        #         self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
-        #     elif delta_angle < -threshold:
-        #         #print("less than threshold")
-        #         new_theta = robot.rot + increment
-        #         curve_x = self.robot.loc[0] - self.radius * math.sin(new_theta)
-        #         curve_y = self.robot.loc[1] - self.radius * math.cos(new_theta)
-        #         self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
-        #     else:
-        #         self.pid.set_target(self.target_loc, robot.rot)
-
-        threshold = 0.05
-        delta = self.target_loc - robot.loc
-        target_angle = math.atan2(delta[1], delta[0]) * -1
-        if target_angle < 0:
-            target_angle = 2*math.pi + target_angle
-        delta_angle = target_angle - self.robot.rot
-        
-        increment = math.atan(math.pow(np.linalg.norm(robot.velocity), 2) / (self.radius * 10 * self.mu))
-        if delta_angle > threshold:
-            #print("greater than threshold")
-            new_theta = robot.rot + increment
-            curve_x = self.robot.loc[0] + self.radius * math.sin(new_theta)
-            curve_y = self.robot.loc[1] + self.radius * math.cos(new_theta)
-            self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
-        elif delta_angle < -threshold:
-            #print("less than threshold")
-            new_theta = robot.rot - increment
-            curve_x = self.robot.loc[0] - self.radius * math.sin(new_theta)
-            curve_y = self.robot.loc[1] - self.radius * math.cos(new_theta)
-            self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
+        if robot is self.game.ball.controler:# and np.linalg.norm(self.game.ball.velocity) == 0:
+            self.go_intercept = False
+        if robot is not self.game.ball.controler and self.go_intercept: #np.linalg.norm(robot.loc - ball.loc) > self.min_contact and 
+            return(self.intercept.run())
         else:
-            self.pid.set_target(self.target_loc, robot.rot) 
+            threshold = 0.05
+            delta = self.target_loc - robot.loc
+            target_angle = math.atan2(delta[1], delta[0]) * -1
+            if target_angle < 0:
+                target_angle = 2*math.pi + target_angle
+            delta_angle = target_angle - self.robot.rot
+
+            ball_angle = -math.atan2(self.game.ball.velocity[1], self.game.ball.velocity[0])
+            if ball_angle < 0:
+                ball_angle = 2*math.pi + ball_angle
+            
+            new_theta = robot.rot
+            curve_x, curve_y = self.target_loc[0], self.target_loc[1]
+
+            increment = math.atan(math.pow(np.linalg.norm(robot.velocity), 2) / (self.radius * 10 * self.mu))
+            if delta_angle > threshold:
+                #print("greater than threshold")
+                new_theta = robot.rot + increment - self.angle_constant
+                curve_x = self.robot.loc[0] + self.radius * math.sin(new_theta)
+                curve_y = self.robot.loc[1] + self.radius * math.cos(new_theta)
+                #self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
+            elif delta_angle < -threshold:
+                #print("less than threshold")
+                new_theta = robot.rot - increment - self.angle_constant
+                curve_x = self.robot.loc[0] - self.radius * math.sin(new_theta)
+                curve_y = self.robot.loc[1] - self.radius * math.cos(new_theta)
+                #self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
+            #else:
+                # ball_angle = -math.atan2(self.game.ball.velocity[1], self.game.ball.velocity[0])
+                # if ball_angle < 0:
+                #     ball_angle = 2*math.pi + ball_angle
+                # print(target_angle, ball_angle)
+                #self.pid.set_target(self.target_loc, robot.rot) 
+            print(ball_angle, target_angle)
+            self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
+
+        # threshold = 0.05
+        # delta = self.target_loc - robot.loc
+        # target_angle = math.atan2(delta[1], delta[0]) * -1
+        # if target_angle < 0:
+        #     target_angle = 2*math.pi + target_angle
+        # delta_angle = target_angle - self.robot.rot
+        
+        # increment = math.atan(math.pow(np.linalg.norm(robot.velocity), 2) / (self.radius * 10 * self.mu))
+        # if delta_angle > threshold:
+        #     #print("greater than threshold")
+        #     new_theta = robot.rot + increment
+        #     curve_x = self.robot.loc[0] + self.radius * math.sin(new_theta)
+        #     curve_y = self.robot.loc[1] + self.radius * math.cos(new_theta)
+        #     self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
+        # elif delta_angle < -threshold:
+        #     #print("less than threshold")
+        #     new_theta = robot.rot - increment
+        #     curve_x = self.robot.loc[0] - self.radius * math.sin(new_theta)
+        #     curve_y = self.robot.loc[1] - self.radius * math.cos(new_theta)
+        #     self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
+        # else:
+        #     self.pid.set_target(self.target_loc, robot.rot) 
 
         # if delta_angle > threshold:
         #     angle = (robot.rot - self.P_constant + self.I *
@@ -159,7 +171,7 @@ if __name__ == "__main__":
     move_action = move_to()
     dribble_action = dribble_ball()
     intercept_action = intercept_ball()
-    move_action.set_target(np.array([0,0]), 0)
+    #move_action.set_target(np.array([0,0]), 0)
 
     game.add_action(dribble_action, 0, True)
     game.add_action(move_action, 1, True)
@@ -170,10 +182,16 @@ if __name__ == "__main__":
                 pygame.quit()
                 sys.exit()
             if event.type == KEYDOWN or event.type == KEYUP:
-                keys = pygame.key.get_pressed()
-                key_action.keypress_update(keys)
+                random_location_1 = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
+                game.ball.loc = random_location_1
+                game.ball.velocity = np.array([0,0])
+                #keys = pygame.key.get_pressed()
+                #key_action.keypress_update(keys)
         new_time = clock.tick()
-        if j % 750 == 0:
+        if j % 1000 == 0:
+            random_location_1 = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
+            game.ball.loc = random_location_1
+            game.ball.velocity = np.array([0,0])
             dribble_action.reset()
             print("Change")
             random_location = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
