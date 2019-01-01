@@ -30,7 +30,7 @@ class dribble_ball(action):
         self.min_contact = .1 #125
         self.radius = 150
         self.mu = 37
-        self.angle_constant = -0.1
+        self.angle_constant = 0.03
 
         #PID
         self.I = 0
@@ -92,7 +92,7 @@ class dribble_ball(action):
                 #self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
             elif delta_angle < -threshold:
                 #print("less than threshold")
-                new_theta = robot.rot - increment - self.angle_constant
+                new_theta = robot.rot - increment + self.angle_constant
                 curve_x = self.robot.loc[0] - self.radius * math.sin(new_theta)
                 curve_y = self.robot.loc[1] - self.radius * math.cos(new_theta)
                 #self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
@@ -102,7 +102,7 @@ class dribble_ball(action):
                 #     ball_angle = 2*math.pi + ball_angle
                 # print(target_angle, ball_angle)
                 #self.pid.set_target(self.target_loc, robot.rot) 
-            print(ball_angle, target_angle)
+            print(ball_angle, "target:", target_angle)
             self.pid.set_target(np.array([curve_x, curve_y]), new_theta)
 
         # threshold = 0.05
@@ -163,18 +163,21 @@ class dribble_ball(action):
         return self.target_loc
 
 if __name__ == "__main__": 
-    max_bots_per_team = 6
+    max_bots_per_team = 1
     game = PYsim(max_bots_per_team)
     clock = pygame.time.Clock()
     clock.tick(60)
     ttime = clock.tick()
     move_action = move_to()
+    move_action_away_b = move_to()
+    move_action_away_y = move_to()
     dribble_action = dribble_ball()
     intercept_action = intercept_ball()
     #move_action.set_target(np.array([0,0]), 0)
 
     game.add_action(dribble_action, 0, True)
-    game.add_action(move_action, 1, True)
+    game.add_action(move_action, 0, False)
+
     j = 0
     while 1:
         for event in pygame.event.get():
@@ -188,6 +191,7 @@ if __name__ == "__main__":
                 #keys = pygame.key.get_pressed()
                 #key_action.keypress_update(keys)
         new_time = clock.tick()
+
         if j % 1000 == 0:
             random_location_1 = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
             game.ball.loc = random_location_1
@@ -197,6 +201,7 @@ if __name__ == "__main__":
             random_location = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
             dribble_action.set_target(random_location)
             move_action.set_target(dribble_action.get_target(), 0)
+
         game.step()
         j += 1
         ttime = new_time
