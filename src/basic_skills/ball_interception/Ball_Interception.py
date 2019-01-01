@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '../../../src')
 from basic_skills.action import *
 from basic_skills.move_to.move_to import *
 from basic_skills.orbit_ball.orbit_ball import *
@@ -20,6 +20,7 @@ class intercept_ball(action):
     self.robot_radius = 90
     self.ball_radius = 25
     self.orbit = orbit_ball()
+    
   def add(self, robot, game):
     self.robot = robot
     self.pid.robot = robot

@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '../../../src')
 #sys.path.insert(0, '../../GR_sim_networking')
 
 from pygame_simulator.PySim import *

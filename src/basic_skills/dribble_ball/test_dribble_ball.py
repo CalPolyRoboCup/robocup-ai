@@ -1,23 +1,26 @@
 import numpy as np
 import sys
-sys.path.insert(0, '../../GR_sim_networking')
-sys.path.insert(0, '/home/adleywong/Repositories/robocup-ai/src/move_to')
+sys.path.insert(0, '../../../src')
 
-from GR_Interact import *
-from dribble_ball import *
-
-def reset(game):
-  print("update")
-  game.sync_with_sim()
+from pygame_simulator.PySim import *
+from basic_skills.ball_interception.Ball_Interception import *
+from basic_skills.ball_interception.Catch_Pygym import *
+from basic_skills.move_to.move_to import *
 
 if __name__ == "__main__":
   max_bots_per_team = 6
-  game = GRsim(max_bots_per_team)
+  game = Ball_Intercept_PYGym(max_bots_per_team)
+  intercept_action = intercept_ball()
   move_action = move_to()
-  reset(game)
-  game.blue_robots[0].add_action(move_action)
-  print(game.ball.loc)
-  for j in range(10000):
-    if j % 300 == 0:
-      move_action.set_target(np.array([1000, 0]), 0)
+  clock = pygame.time.Clock()
+  clock.tick(60)
+  ttime = clock.tick()
+  game.add_action(intercept_action, 0, False)
+  while 1:
+    for event in pygame.event.get():
+      if event.type == QUIT:
+        pygame.quit()
+        sys.exit()
+    new_time = clock.tick()
     game.step()
+    ttime = new_time
