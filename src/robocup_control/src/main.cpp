@@ -14,7 +14,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "player_thread");
   ros::NodeHandle n;
-  
+
   ros::AsyncSpinner spinner(2);
   spinner.start();
 

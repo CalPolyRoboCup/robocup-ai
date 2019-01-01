@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   hardware_interface
   controller_manager
   message_generation
-  #joint_limits_interface
 )
 
 ## System dependencies are found with CMake's conventions
@@ -109,7 +108,6 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  #LIBRARIES robocup_control
   CATKIN_DEPENDS 
   roscpp 
   rospy 
@@ -118,8 +116,6 @@ catkin_package(
   message_runtime
   hardware_interface
   controller_manager
-  #joint_limits_interface
-  #DEPENDS system_lib
 )
 
 ###########
@@ -129,37 +125,29 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(${PROTOBUF_INCLUDE_DIRS})
+
+## Generate Protobuf messages
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS 
-  #proto/messages_robocup_ssl_detection.proto
-  #proto/messages_robocup_ssl_geometry.proto
-  #proto/messages_robocup_ssl_wrapper.proto
-  #proto/messages_robocup_ssl_refbox_log.proto
   proto/grSim_Replacement.proto
   proto/grSim_Commands.proto
   proto/grSim_Packet.proto 
 )
-message(STATUS "Protobuf headers: ${PROTO_HDRS}")
-message(STATUS "Catkin includes: ${catkin_INCLUDE_DIRS}")
-message(STATUS "Output dir: ${CMAKE_CURRENT_BINARY_DIR}")
+
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${CMAKE_CURRENT_BINARY_DIR}
 )
+
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
   src/player_hw_interface.cpp
   src/player_control_loop.cpp
-  #src/robocup_ssl_client.cpp
-  src/dummy_service.cpp
+  src/sim_spi_service.cpp
   src/drive_controller.cpp
   ${PROTO_SRCS}
 )
 
-#add_library(drive_controller
-#include/robocup_control/drive_controller.h
-  #src/drive_controller.cpp
-  #)
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
@@ -173,7 +161,7 @@ target_link_libraries(${PROJECT_NAME}
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(dummy_thread src/dummy_thread.cpp) 
+add_executable(sim_spi_thread src/sim_spi_thread.cpp) 
 add_executable(player_thread src/main.cpp)
 add_executable(pose_thread src/dummy_pose_pub.cpp)
 ## Rename C++ executable without prefix
@@ -187,7 +175,7 @@ add_executable(pose_thread src/dummy_pose_pub.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(
-  dummy_thread
+  sim_spi_thread
   ${catkin_LIBRARIES}
   ${PROJECT_NAME}
 )
@@ -203,7 +191,7 @@ target_link_libraries(
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(dummy_thread robocup_control_gencpp)
+add_dependencies(sim_spi_thread robocup_control_gencpp)
 add_dependencies(player_thread robocup_control_gencpp)
 add_dependencies(pose_thread robocup_control_gencpp)
 #############

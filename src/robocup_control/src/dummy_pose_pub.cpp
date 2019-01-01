@@ -14,7 +14,7 @@ int main(int argc, char** argv)
   ros::NodeHandle n;
   ros::Publisher pose_pub = n.advertise<geometry_msgs::Pose>("command_pose", 1000);
   ros::Rate loop_rate(60);
-  while(ros::ok())
+  while (ros::ok())
   {
     geometry_msgs::Pose pose;
     pose.position.x = 0.0;
