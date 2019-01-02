@@ -23,9 +23,9 @@ class move_to(action):
     self.pivot_center = np.array([-.1,0])
     self.pivot_factor = 0#.0004
 
-    self.rot_control_speed = 29.81
-    self.rotP = 8
-    self.rotD = 5.89
+    self.rot_control_speed = 100
+    self.rotP = 100
+    self.rotD = 40
   def set_target(self, target_loc, target_rot):
     if target_loc[0] < -5500:
       target_loc[0] = -5500
@@ -88,16 +88,16 @@ def PID_tuning_tool(move_action):
   Dsl = Slider(Dax, "translation - D", 7, 30, valinit=move_action.locD)
   
   RPax = plt.axes([0.25, 0.2, 0.65, 0.03])
-  RPsl = Slider(RPax, "rotational - P", 0, 50, valinit=move_action.rotP)
+  RPsl = Slider(RPax, "rotational - P", 40, 100, valinit=move_action.rotP)
 
   RDax = plt.axes([0.25, 0.25, 0.65, 0.03])
-  RDsl = Slider(RDax, "rotational - D", 0, 50, valinit=move_action.rotD)
+  RDsl = Slider(RDax, "rotational - D", 40, 100, valinit=move_action.rotD)
   
   TSax = plt.axes([0.25, 0.3, 0.65, 0.03])
   TSsl = Slider(TSax, "translational speed", 50, 250, valinit=move_action.translational_control_speed)
 
   RSax = plt.axes([0.25, 0.35, 0.65, 0.03])
-  RSsl = Slider(RSax, "rotational speed", 0, 50, valinit=move_action.rot_control_speed)
+  RSsl = Slider(RSax, "rotational speed", 40, 100, valinit=move_action.rot_control_speed)
 
   def update(event):
     plt.figure(1)
@@ -126,7 +126,7 @@ if __name__ == "__main__":
                   args = (move_action,))
   tool_thread.start()
   
-  game.add_action(move_action, 0, true)
+  game.add_action(move_action, 0, True)
   j = 0
   while 1:
     for event in pygame.event.get():
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     if j % 300 == 0:
       random_location = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
       random_velocity = np.random.uniform(-1, 1, size = [2])*np.array([500, 500])
-      random_rotation = np.random.uniform(-2*math.pi, 2*math.pi)
+      random_rotation = -math.pi#np.random.uniform(-2*math.pi, 2*math.pi)
       game.blue_robots[0].loc = random_location
       game.blue_robots[0].rot = random_rotation
       game.blue_robots[0].velocity = random_velocity
