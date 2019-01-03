@@ -15,11 +15,12 @@ randomObstacles =  [ ( random.uniform( obstacleConstraints[0], obstacleConstrain
         ( random.uniform( obstacleConstraints[0], obstacleConstraints[1]), random.uniform( obstacleConstraints[0], obstacleConstraints[1] ), 1.5 ) , 
         ( random.uniform( obstacleConstraints[0], obstacleConstraints[1]), random.uniform( obstacleConstraints[0], obstacleConstraints[1]), 1 ) ]
 
-myRRT = rrt( [ 1.0 , 1.0 ] ,
+myRRT = rrt( 
+        [ 1.0 , 1.0 ] ,
         [ 7.0 , 7.0 ] ,
         obstacleWall ,
         constraints )
 
 nextPoint = myRRT.computeSolutionPath()
-print("Next X : ", nextPoint.x)
-print("Next Y : ", nextPoint.y)
+print("Next X : ", nextPoint[0])
+print("Next Y : ", nextPoint[1])

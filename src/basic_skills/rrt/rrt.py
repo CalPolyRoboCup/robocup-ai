@@ -12,9 +12,9 @@ class rrt():
             goal_Point, # coordinates of goal Point
             obstacle_List, # List of obstacle ( x, y, radius )
             randomization_Constraints, # List of min/max constraints for random Point Sampling
-            growth_Factor = .75, # Amount by which a new branch will grow towards Sample Point
+            growth_Factor = 500, # Amount by which a new branch will grow towards Sample Point
             goal_SampleRate = 10, # probability of sampling the Goal point 
-            ANIMATE = True) : # animation toggle
+            ANIMATE = False) : # animation toggle
 
         self.start_Point = Point ( start_Point[0], start_Point[1] )
         self.goal_Point = Point ( goal_Point[0], goal_Point[1] )
@@ -60,7 +60,7 @@ class rrt():
         # Trace backwards towards start Point for solution path
         # 8) traceFinalPath() , returns list of Point coordinate pairs from endPoint to startPoint
         if self.ANIMATE : self.traceFinalPath(point_List)
-        return point_List[1]
+        return [ point_List[1].x, point_List[1].y]
         # self.solution_Path = traceFinalPath( point_List)
     
     ######## METHODS
@@ -101,14 +101,16 @@ class rrt():
         dy = new_Point.y - self.goal_Point.y
         distance =math.sqrt ( dx**2 + dy**2 )
 
-        print("X :", new_Point.x)
-        print("Y :", new_Point.y)
-
         if distance <= self.growth_Factor :
             print("True")
+            print("Start X :", self.start_Point.x)
+            print("Start Y :", self.start_Point.y)
+
+            print("X :", new_Point.x)
+            print("Y :", new_Point.y)
             return True
         else :
-            print("False")
+            #print("False")
             return False
 
     def collisionDetected(self, new_Point, point_List, collision_Detected) :

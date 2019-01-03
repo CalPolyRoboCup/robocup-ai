@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '/home/wulfine/repos/robocup-ai/src')
 from basic_skills.action import *
 from basic_skills.move_to.move_to import *
 from basic_skills.helper_functions import *
@@ -17,10 +17,14 @@ class intercept_ball(action):
     self.robot_actual_speed = 400
     self.robot_radius = 90
     self.ball_radius = 25
+
   def add(self, robot, game):
+    # assigns access to robot to class
+    # then runs action.add for one time calculations
     self.robot = robot
     self.pid.robot = robot
     action.add(self, robot, game)
+
   def run(self):
     ball = self.game.ball
     ball_speed = np.linalg.norm(ball.velocity)
@@ -121,5 +125,3 @@ if __name__ == "__main__":
   plt.gcf().canvas.mpl_connect('button_press_event', update)
   game.display([intercept.target_loc])
   plt.show()
-
-

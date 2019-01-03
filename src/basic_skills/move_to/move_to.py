@@ -10,8 +10,8 @@ import numpy as np
 class move_to(action):
   def __init__(self, target_loc = False, target_rot = False):
     action.__init__(self)
-    self.target_loc = target_loc
-    self.target_rot = target_rot
+    self.target_loc = target_loc # boolean, why? placeholder?
+    self.target_rot = target_rot # boolean
 
     self.translational_control_speed = 150
     self.locP = 34.3#.0045
@@ -22,24 +22,28 @@ class move_to(action):
     self.rot_control_speed = 29.81
     self.rotP = 8
     self.rotD = 5.89
+
   def set_target(self, target_loc, target_rot):
-    self.target_loc = target_loc
-    self.target_rot = target_rot
+    #self.target_loc = target_loc
+    #self.target_rot = target_rot
+    # RRT test
     rrt_strategy = rrt(
             [self.robot.loc[0], self.robot.loc[1]],
-            [target_loc[0], target_loc[1]],
-            [1,1,.2],
+            target_loc,
+            [ [1, 1, .2] ],
             [0,10])
-    next_Point = rrt_strategy.computerSolutionPath()
-    self.target_loc[0], self.target_loc[1] = next_Point[0], next_Point[1]
+    next_Point = rrt_strategy.computeSolutionPath()
+    self.next_Point = np.array( next_Point, dtype = np.float64)
+    self.target_loc = self.next_Point
 
   def run(self):
-    norm_vel, tang_vel = self.PID_loc()
+    norm_vel, tang_vel = self.PID_loc() #
     rot_vel = self.PID_rot()
     action = [0,0,norm_vel, tang_vel, rot_vel]
     self.action = action
     #print("move to P - ", self.locP)
     return action
+
   def PID_loc(self):
     vector = self.target_loc - self.robot.loc
     distance = np.linalg.norm(vector)
@@ -58,6 +62,7 @@ class move_to(action):
     #rot_vel = cross_prod * self.pivot_factor
     #print(rot_vel, self.locP*local, -self.locD*local_vel)
     return loc_PID[0], loc_PID[1]#, rot_vel
+
   def PID_rot(self):
     distance = min_angle(self.target_rot - self.robot.rot)
     PID = self.rotP*distance - self.rotD*self.robot.rot_vel
@@ -67,6 +72,7 @@ class move_to(action):
       PID = -self.rot_control_speed
 
     return PID
+
   def done(self):
     epsilon = 5
     if np.linalg.norm(self.target_loc - self.robot.loc) < epsilon and np.linalg.norm(self.robot.velocity) < epsilon:

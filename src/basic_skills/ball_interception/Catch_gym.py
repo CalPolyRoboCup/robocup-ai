@@ -1,7 +1,7 @@
 import math
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '/home/wulfkine/repos/robocup-ai/src')
 from GR_sim_networking.GR_Interact import *
 from basic_skills.helper_functions import *
 

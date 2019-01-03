@@ -1,6 +1,6 @@
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '/home/wulfkine/repos/robocup-ai/src')
 from basic_skills.robot import *
 from basic_skills.action import *
 from basic_skills.helper_functions import *
@@ -74,15 +74,15 @@ class PYsim:
 
     self.font = pygame.font.SysFont("Impact", 55)
     self.screen = pygame.display.set_mode(self.screen_res, pygame.HWSURFACE, 32)
-    self.field_image = pygame.image.load("/Users/nathan/Documents/robocup-ai/src/resources/Field.png").convert_alpha()
+    self.field_image = pygame.image.load("/home/wulfkine/repos/robocup-ai/src/resources/Field.png").convert_alpha()
     field_scale = self.field_image.get_rect().size * self.screen_res / np.array([1040, 740])
     field_scale = (int(field_scale[0]), int(field_scale[1]))
     self.field_image = pygame.transform.scale(self.field_image, field_scale)
-    self.blue_robot_image = pygame.image.load("/Users/nathan/Documents/robocup-ai/src/resources/BlueBot.png").convert_alpha()
+    self.blue_robot_image = pygame.image.load("/home/wulfkine/repos/robocup-ai/src/resources/BlueBot.png").convert_alpha()
     robot_scale = 2*robot_radius*self.screen_res/self.field_dims
     robot_scale = (int(robot_scale[0]), int(robot_scale[1]))
     self.blue_robot_image = pygame.transform.scale(self.blue_robot_image, robot_scale)
-    self.yellow_robot_image = pygame.image.load("/Users/nathan/Documents/robocup-ai/src/resources/YellowBot.png").convert_alpha()
+    self.yellow_robot_image = pygame.image.load("/home/wulfkine/repos/robocup-ai/src/resources/YellowBot.png").convert_alpha()
     self.yellow_robot_image = pygame.transform.scale(self.yellow_robot_image, robot_scale)
     
     self.time_step = 1/60
@@ -105,8 +105,10 @@ class PYsim:
       self.yellow_robots[i].velocity = np.array([0,0])
     self.ball.loc = np.array([0,0])
     self.ball.velocity = np.array([0,0])
+
   def convert_to_screen_position(self, loc, dims = [0,0]):
     return (loc - self.field_upper_left)*self.screen_res/self.field_dims - np.array(dims)/2
+
   def draw(self):
     #self.screen.fill((150,150,150))
     self.screen.blit(self.field_image,(0,0))
@@ -121,6 +123,7 @@ class PYsim:
     position = self.convert_to_screen_position(self.ball.loc)
     pygame.draw.circle(self.screen, (255,55,0), (int(position[0]), int(position[1])), int(ball_radius*self.screen_res[0]/self.field_dims[0]))
     pygame.display.update()
+
   def update_bot(self, robot, delta_time):
     KICK_CD = 180
     kick_length = 40
@@ -178,6 +181,7 @@ class PYsim:
     robot.loc = robot.loc + robot.velocity * delta_time
     robot.rot = robot.rot + robot.rot_vel * delta_time
     return 0
+
   def do_collision(self, delta_time):
     ball_mass = 1
     elasticity_factor = .8
@@ -209,10 +213,13 @@ class PYsim:
           self.ball.velocity = self.ball.velocity + push_out_vector / delta_time / ball_mass + bounce_velocity
           self.ball.loc = self.ball.loc + push_out_vector
       i += 1
+
   def get_reward(self):
     return 0
+
   def get_transition(self):
     return False
+
   def step(self, delta_time = 1/60):
     spin_degen = .75
     ball_friction_factor = .999
@@ -234,6 +241,7 @@ class PYsim:
     self.ball.controler = False
     self.draw()
     return self.get_state(), self.get_reward(), self.get_transition()
+
   def get_state(self):
     rot_noise = .1
     vel_noise = 75
@@ -272,6 +280,7 @@ class keyboard_control(action):
     self.kick = 0
     self.speed = 65
     self.rot_speed = 4
+
   def keypress_update(self, keys):
     self.norm_vel = 0
     self.tang_vel = 0
@@ -291,6 +300,7 @@ class keyboard_control(action):
       self.rot_vel = self.rot_speed
     elif keys[K_e]:
       self.rot_vel = -self.rot_speed
+
   def run(self):
     action = [self.kick,0,self.norm_vel, self.tang_vel, self.rot_vel]
     self.action = action
