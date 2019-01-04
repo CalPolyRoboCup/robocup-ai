@@ -23,6 +23,7 @@ class intercept_ball(action):
     # then runs action.add for one time calculations
     self.robot = robot
     self.pid.robot = robot
+    self.pid.game = game
     action.add(self, robot, game)
 
   def run(self):

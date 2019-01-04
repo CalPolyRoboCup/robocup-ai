@@ -26,11 +26,19 @@ class move_to(action):
   def set_target(self, target_loc, target_rot):
     #self.target_loc = target_loc
     #self.target_rot = target_rot
+    
     # RRT test
+    my_Robots = []
+    #for robot in self.game.yellow_robots :
+    #    if (self.robot.loc[0] != robot.loc[0]) & (self.robot.loc[1] != robot.loc[1]) :
+    #        my_Robots.append( (robot.loc[0], robot.loc[1], 25 ) )
+    for robot in self.game.blue_robots :
+        my_Robots.append( (robot.loc[0], robot.loc[1], 90 ) )
+
     rrt_strategy = rrt(
             [self.robot.loc[0], self.robot.loc[1]],
             target_loc,
-            [ [1, 1, .2] ],
+            my_Robots,
             [0,10])
     next_Point = rrt_strategy.computeSolutionPath()
     self.next_Point = np.array( next_Point, dtype = np.float64)

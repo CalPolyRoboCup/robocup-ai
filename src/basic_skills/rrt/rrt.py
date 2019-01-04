@@ -12,8 +12,9 @@ class rrt():
             goal_Point, # coordinates of goal Point
             obstacle_List, # List of obstacle ( x, y, radius )
             randomization_Constraints, # List of min/max constraints for random Point Sampling
-            growth_Factor = 500, # Amount by which a new branch will grow towards Sample Point
-            goal_SampleRate = 10, # probability of sampling the Goal point 
+            growth_Factor = 90, # Amount by which a new branch will grow towards Sample Point
+            goal_SampleRate = 10, # probability of sampling the Goal point
+            safety_margin = 25,
             ANIMATE = False) : # animation toggle
 
         self.start_Point = Point ( start_Point[0], start_Point[1] )
@@ -22,6 +23,7 @@ class rrt():
         self.max_Rand_Constraint = randomization_Constraints[1]
         self.growth_Factor = growth_Factor
         self.goal_SampleRate = goal_SampleRate
+        self.safety_margin = safety_margin
         self.obstacle_List = obstacle_List
         self.ANIMATE = ANIMATE
 
@@ -97,9 +99,10 @@ class rrt():
         plt.show()
 
     def getGoalStatus(self, new_Point) :
+        # Im still having problems with providing a solution that is as close as possible to goal
         dx = new_Point.x - self.goal_Point.x
         dy = new_Point.y - self.goal_Point.y
-        distance =math.sqrt ( dx**2 + dy**2 )
+        distance = math.sqrt ( dx**2 + dy**2 )
 
         if distance <= self.growth_Factor :
             print("True")
@@ -110,7 +113,7 @@ class rrt():
             print("Y :", new_Point.y)
             return True
         else :
-            #print("False")
+            print("NO GOAL")
             return False
 
     def collisionDetected(self, new_Point, point_List, collision_Detected) :
@@ -120,7 +123,7 @@ class rrt():
             dy = y - new_Point.y
             distance_to_Obstacle = math.sqrt( dx**2 + dy**2)
             if distance_to_Obstacle <= obstacle_Radius :
-                #print("COLLISION")
+                print("COLLISION")
                 return True
         # then check for redundant point sampling
         if collision_Detected :
@@ -128,8 +131,8 @@ class rrt():
                 dx = point.x - new_Point.x
                 dy = point.y - new_Point.y
                 distance_to_Other_Point = math.sqrt( dx**2 + dy**2)
-                if distance_to_Other_Point <= self.growth_Factor : 
-                    #print("REDUNDANT")
+                if distance_to_Other_Point <= 0 : 
+                    print("REDUNDANT")
                     return True
         return False
 
