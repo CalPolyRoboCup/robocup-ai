@@ -12,7 +12,9 @@ from pygame_simulator.PySim import *
 robot_rotation_speed = 4.25
 
 class cover(action):
-  #covers a pass from target_robot to target_loc
+  '''
+  covers a pass from target_robot to target_loc
+  '''
   def __init__(self, target_loc, target_robot, interpose_factor = .5, min_interpose_offset = 0, interpose_weight = 25, lead_target_robot = True):
     action.__init__(self)
     self.pid = move_to()

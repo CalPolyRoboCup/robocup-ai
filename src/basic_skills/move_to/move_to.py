@@ -27,15 +27,20 @@ class move_to(action):
     self.rotP = 100
     self.rotD = 40
   def set_target(self, target_loc, target_rot):
+    '''
+    make target loc valid and 
+    set self.target_loc 
+    and self.target_rot
+    '''
     if target_loc[0] < -5500:
       target_loc[0] = -5500
     if target_loc[0] > 5500:
       target_loc[0] = 5500
-    if target_loc[1] < -4000:
-      target_loc[1] = -4000
-    if target_loc[1] > 4000:
-      target_loc[1] = 4000
-    self.target_loc = target_loc
+    if target_loc[1] < -3500:
+      target_loc[1] = -3500
+    if target_loc[1] > 3500:
+      target_loc[1] = 3500
+    self.target_loc = out_of_endzone(target_loc)
     self.target_rot = target_rot
   def run(self):
     norm_vel, tang_vel = self.PID_loc()
@@ -78,7 +83,7 @@ class move_to(action):
       return True
     return False
 
-
+    
 def PID_tuning_tool(move_action):
   plt.figure(2)
   Pax = plt.axes([0.25, 0.1, 0.65, 0.03])
@@ -122,6 +127,10 @@ if __name__ == "__main__":
   ttime = clock.tick()
   move_action = move_to()
   move_action.set_target(np.array([0,0]), 0)
+  '''
+  make a separate thread to tune PID
+  matplotlib doesn't play nice in the same thread
+  '''
   tool_thread = threading.Thread(target = PID_tuning_tool, 
                   args = (move_action,))
   tool_thread.start()
@@ -137,6 +146,10 @@ if __name__ == "__main__":
         keys = pygame.key.get_pressed()
         key_action.keypress_update(keys)
     new_time = clock.tick()
+    
+    '''
+    put the robot in a random location and have it move back to center
+    '''
     if j % 300 == 0:
       random_location = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
       random_velocity = np.random.uniform(-1, 1, size = [2])*np.array([500, 500])

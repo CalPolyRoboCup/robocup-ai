@@ -10,22 +10,26 @@ from matplotlib.widgets import Slider, Button, RadioButtons
 from pygame_simulator.PySim_noise import *
 
 robot_rotation_speed = 4.25
-
+'''
+this is basically a reskin of orbit ball with parameters tuned so that it pushes the ball instead of orbiting it
+'''
 class dribble_ball(action):
   #covers a pass from target_robot to target_loc
-  def __init__(self, target_loc = False, offset = 60):
+  def __init__(self, target_loc = False, offset = 90):
     action.__init__(self)
     self.pid = move_to()
     self.moving_to = False
     self.target_loc = target_loc
     self.spiral_factor = .4
-    self.push_speed_factor = .45
-    self.chase_down_factor = 10
-    self.speed_mod_factor = 2.9
+    self.push_speed_factor = 1
+    self.chase_down_factor = 4
+    self.speed_mod_factor = 7
     self.offset = offset
+  def set_target(self, target_loc):
+    self.target_loc = target_loc
   def add(self, robot, game):
-    self.robot = robot
-    self.pid.robot = robot
+    #print("2999")
+    self.pid.add(robot, game)
     action.add(self, robot, game)
   def run(self):
     ball_extrapolation = self.game.ball.loc# + self.game.ball.velocity/10

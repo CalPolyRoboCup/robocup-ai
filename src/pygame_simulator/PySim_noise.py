@@ -115,6 +115,9 @@ class PYsim:
     return (loc - self.field_upper_left)*self.screen_res/self.field_dims - np.array(dims)/2
   def draw(self, key_points = []):
     #self.screen.fill((150,150,150))
+    '''
+    render the game
+    '''
     self.screen.blit(self.field_image,(0,0))
     for br in self.blue_robots_internal:
       rot_image = pygame.transform.rotate(self.blue_robot_image , math.degrees(br.rot))
@@ -127,6 +130,10 @@ class PYsim:
       self.screen.blit(rot_image, position)
     position = self.convert_to_screen_position(self.ball_internal.loc)
     pygame.draw.circle(self.screen, (255,55,0), (int(position[0]), int(position[1])), int(ball_radius*self.screen_res[0]/self.field_dims[0]))
+    
+    '''
+    render the key points
+    '''
     for kp in key_points:
       if type(kp) is tuple:
         plot_point = self.convert_to_screen_position(np.array(kp[0]))
@@ -140,20 +147,47 @@ class PYsim:
         pygame.draw.circle(self.screen, (155,155,0), (int(kp[0]), int(kp[1])), int(ball_radius*self.screen_res[0]/self.field_dims[0])*4)
     pygame.display.update()
   def update_bot(self, robot, delta_time):
+    
+    #kicker refactory period
     KICK_CD = 180
+    
+    #hit box for kick
     kick_length = 40
     kick_width = 70
-    kick_delta_V = 1000
+    
+    #kick force
+    kick_delta_V = 1100
+    
+    #hit box for spinner
     spin_length = 25
     spin_width = 100
+    
+    #spin force when touching
     spin_lin_accel = 5
+    
+    #stored spin force after contact broken (leaving it equal to spin_lin_accel works well)
     spin_rot_accel = 5
-    accel_rate = .99
-    max_speed = 3000
-    max_angular_speed = 2
+    
+    #how much acceleration can be stored in spin
     max_ball_spin = 4
+    
+    #how quickly the ball spins up (0 to 1 inclusive) larger is slower
     spin_accel_rate = .85
     
+    
+    
+    #how fast the current robot velocity changes to the target velocity (0 to 1 inclusive) larger is slower
+    accel_rate = .99
+    
+    #how fast the robot can move
+    max_speed = 3000
+    
+    #how fast the robot can turn (radians)
+    max_angular_speed = 2
+    
+    '''
+    spinner stuff
+    '''
     ball_robot_vector = self.ball_internal.loc - robot.loc
     robot_local_ball_loc = convert_local(ball_robot_vector, -robot.rot)
     if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < robot_radius + spin_length + ball_radius
@@ -172,6 +206,10 @@ class PYsim:
     if action == None:
       action = [0,0,0,0,0]
       
+    '''
+    kicking stuff
+    '''
+      
     if robot.kick_cooldown > 0:
       robot.kick_cooldown -= 1
     if action[0] and robot.kick_cooldown == 0:
@@ -181,11 +219,18 @@ class PYsim:
       if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < robot_radius + kick_length + ball_radius
         and abs(robot_local_ball_loc[1]) < kick_width/2):
         self.ball_internal.velocity = self.ball_internal.velocity + kick_delta_V * ball_robot_vector / np.linalg.norm(ball_robot_vector)
-      
+    
+    '''
+    movement stuff
+    '''
+    
     #15.3846 is there to make control magnitudes similar to GRsim
     robot.velocity = robot.velocity*accel_rate + convert_local(np.array(action[2:4])*15.3846, robot.rot) * (1-accel_rate)
     robot.rot_vel = robot.rot_vel*accel_rate + action[4] * (1-accel_rate)
     
+    '''
+    limit max speed
+    '''
     if np.linalg.norm(robot.velocity) > max_speed:
       robot.velocity = robot.velocity * max_speed/np.linalg.norm(robot.velocity)
     if robot.rot_vel > max_angular_speed:
@@ -198,7 +243,10 @@ class PYsim:
     return 0
   def do_collision(self, delta_time):
     ball_mass = 1
-    elasticity_factor = .8
+    
+    #1 perfectly elastic (bounces)
+    #0 perfectly inelastic (sticks)
+    elasticity_factor = .5
     
     robots = []
     robots.extend(self.blue_robots_internal)
@@ -206,6 +254,9 @@ class PYsim:
     i = 0
     ball_held = False
     for r in robots:
+      '''
+      handle collisions with other robots
+      '''
       for o in robots[i+1:]:
         distance = np.linalg.norm(r.loc - o.loc)
         if distance < 2 * robot_radius:
@@ -214,11 +265,18 @@ class PYsim:
           r.velocity = r.velocity - push_out_vector / delta_time
           o.loc = o.loc + push_out_vector
           o.velocity = o.velocity + push_out_vector / delta_time
+          
+      '''
+      handle collisions with other balls
+      '''
       ball_vector = self.ball_internal.loc - r.loc
       ball_distance = np.linalg.norm(ball_vector)
       if ball_distance < robot_radius + ball_radius:
         push_out_vector = ball_vector * ((robot_radius + ball_radius) - ball_distance)/ball_distance
         bounce_velocity = drop_perpendicular(self.ball_internal.velocity, np.array([0,0]), ball_vector) * elasticity_factor
+        '''
+        only move the ball unless anouther robot is pushing on the ball already
+        '''
         if ball_held:
           r.loc = r.loc - push_out_vector
           self.ball_internal.velocity = self.ball_internal.velocity + push_out_vector / delta_time / ball_mass + bounce_velocity
@@ -228,6 +286,9 @@ class PYsim:
           self.ball_internal.loc = self.ball_internal.loc + push_out_vector
       i += 1
   def get_reward(self):
+    '''
+    checks for out of bounds and goals
+    '''
     if self.ball_internal.controler != False:
       self.ball_internal.last_controler = self.ball_internal.controler
     if self.ball_internal.last_controler != False:
@@ -253,7 +314,10 @@ class PYsim:
         return reward, True
     return self.ball_internal.loc[0]/1000, False
   def step(self, delta_time = .01666666, key_points = []):
+    #how quickly the ball looses spin
     spin_degen = .75
+    
+    #how quickly the ball slows down when not controlled (larger slows down less)
     ball_friction_factor = .999
     
     state = self.get_state()
@@ -266,6 +330,9 @@ class PYsim:
     
     self.do_collision(delta_time)
     
+    '''
+    if the ball is free its spin will adjust its velocity slightly
+    '''
     # if (np.linalg.norm(self.ball_internal.spin) > max_ball_spin):
       # self.ball_internal.spin = self.ball_internal.spin * max_ball_spin / np.linalg.norm(self.ball_internal.spin)
     if not self.ball_internal.controler:
@@ -289,6 +356,9 @@ class PYsim:
       self.yellow_robots_internal[index].add_action(action)
       self.yellow_robots[index].add_action(action)
   def get_state(self):
+    '''
+    inject noise into ball_internal, and robot_internal states and update external objects
+    '''
     translation_noise = 0
     rotation_noise = 0
     vanish_prob = 0
@@ -335,6 +405,9 @@ class PYsim:
     
     return state_blue, state_yellow
     
+'''
+test action
+'''
 class keyboard_control(action):
   def __init__(self):
     action.__init__(self)
