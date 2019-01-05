@@ -42,7 +42,7 @@ class Ball_Intercept_Gym (GRsim):
     self.ball.loc = random_offset
     random_offset = np.random.uniform(-1, 1, size = [2])*np.array([1000, 1000])
     target_loc = self.blue_robots[0].loc + random_offset
-    speed = np.random.uniform(.1, 10)
+    speed = np.random.uniform(1, 25)
     self.ball.velocity = (target_loc - self.ball.loc)
     self.ball.velocity *= speed/np.linalg.norm(self.ball.velocity)
     self.push_state()
