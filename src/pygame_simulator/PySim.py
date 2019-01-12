@@ -1,6 +1,6 @@
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '..')
 from basic_skills.robot import *
 from basic_skills.action import *
 from basic_skills.helper_functions import *
@@ -138,20 +138,49 @@ class PYsim:
         pygame.draw.circle(self.screen, (155,155,0), (int(kp[0]), int(kp[1])), int(ball_radius*self.screen_res[0]/self.field_dims[0])*4)
     pygame.display.update()
   def update_bot(self, robot, delta_time):
+    #kicker refactory period
     KICK_CD = 180
+    
+    #hit box for kick
     kick_length = 40
     kick_width = 70
-    kick_delta_V = 2000
+    
+    #kick force
+    kick_delta_V = 1100
+    
+    #hit box for spinner
     spin_length = 25
     spin_width = 100
+    
+    #spin force when touching
     spin_lin_accel = 5
+    
+    #stored spin force after contact broken (leaving it equal to spin_lin_accel works well)
     spin_rot_accel = 5
-    accel_rate = .99
-    max_speed = 3000
-    max_angular_speed = 2
+    
+    #how much acceleration can be stored in spin
     max_ball_spin = 4
+    
+    #how quickly the ball spins up (0 to 1 inclusive) larger is slower
     spin_accel_rate = .85
     
+    
+    
+    #how fast the current robot velocity changes to the target velocity (0 to 1 inclusive) larger is slower
+    accel_rate = .99
+    
+    #how fast the robot can move
+    max_speed = 3000
+    
+    #how fast the robot can turn (radians)
+    max_angular_speed = 2
+    
+    
+    
+    '''
+    do spinner stuff
+    TODO: simulate the front of the 
+    '''
     ball_robot_vector = self.ball.loc - robot.loc
     robot_local_ball_loc = convert_local(ball_robot_vector, -robot.rot)
     if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < robot_radius + spin_length + ball_radius
@@ -166,10 +195,16 @@ class PYsim:
       self.ball.velocity = self.ball.velocity * spin_accel_rate + pull_vel * (1-spin_accel_rate)
       #print("spin - ",robot.id, robot.is_blue, " - ", pull_vel, self.ball.velocity)
       
+    '''
+    handle the action on this robot
+    '''
     action = robot.run_action()
     if action == None:
       action = [0,0,0,0,0]
       
+    '''
+    do kick stuff
+    '''
     if robot.kick_cooldown > 0:
       robot.kick_cooldown -= 1
     if action[0] >= 1 and robot.kick_cooldown == 0:
@@ -179,10 +214,16 @@ class PYsim:
         and abs(robot_local_ball_loc[1]) < kick_width/2):
         self.ball.velocity = self.ball.velocity + kick_delta_V * ball_robot_vector / np.linalg.norm(ball_robot_vector)
       
+    '''
+    handle velocity inputs from wheels
+    '''
     #15.3846 is there to make control magnitudes similar to GRsim
     robot.velocity = robot.velocity*accel_rate + convert_local(np.array(action[2:4])*15.3846, robot.rot) * (1-accel_rate)
     robot.rot_vel = robot.rot_vel*accel_rate + action[4] * (1-accel_rate)
     
+    '''
+    limit max speed
+    '''
     if np.linalg.norm(robot.velocity) > max_speed:
       robot.velocity = robot.velocity * max_speed/np.linalg.norm(robot.velocity)
     if robot.rot_vel > max_angular_speed:
