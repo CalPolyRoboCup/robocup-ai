@@ -57,7 +57,7 @@ if __name__ == "__main__":
                   args = (move_action,))
   tool_thread.start()
   
-  game.blue_robots[0].add_action(move_action)
+  game.add_action(move_action, 0, True)
   j = 0
   while 1:
     for event in pygame.event.get():

@@ -1,6 +1,6 @@
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '../..')
 from basic_skills.action import *
 from basic_skills.helper_functions import *
 
@@ -40,7 +40,8 @@ class move_to(action):
       target_loc[1] = -3500
     if target_loc[1] > 3500:
       target_loc[1] = 3500
-    self.target_loc = out_of_endzone(target_loc)
+    
+    self.target_loc = out_of_goalie_area(target_loc)
     self.target_rot = target_rot
   def run(self):
     norm_vel, tang_vel = self.PID_loc()

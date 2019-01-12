@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '../..')
 from basic_skills.action import *
 from basic_skills.helper_functions import *
 from basic_skills.action import *
@@ -57,6 +57,7 @@ def worst_intercept(location, p, enemies):
     
   if worst < 0:
     worst = 0
+    
   return worst, worst_local, pangle
 
 class get_open(action):
@@ -68,6 +69,12 @@ class get_open(action):
         move to a new location
   '''
   def __init__(self, points, weights, enemies, allies):
+    '''
+    params: points - points to optimize passes to
+            weights - relative importance of points. Must be the same size as points
+            enemies - list of enemy robots. Used to calculated pass values
+            allies - list of allied robots. Used to ensure robots spread out.
+    '''
     action.__init__(self)
     self.points = points
     self.weights = weights
@@ -75,27 +82,36 @@ class get_open(action):
     self.allies = allies
     self.move_to = np.array([0,0])
     
+    '''
+    magic numbers
+    stand_off_distance - distance to maintain between allies
+    freakout_weight - minimum acceptable score. If score drops bellow this the robot repositions
+    samples - number of points to consider when repositioning
+    sample_points - the points to consider when repositioning
+    speed_mod - increases the speed of the robot. Can also cause oscillations
+    depth_weight - smaller values stay farther from enemy robots. Not sure how to describe this without references to the code.
+    '''
     self.stand_off_distance = 750
-    self.freakout_weight = 150
-    self.max_catch_dist = 700
-    self.samples = 240
-    
-    #smaller values stay farther from enemy robots
+    self.freakout_weight = 300
+    self.samples = 12
+    self.sample_points = [[x,y] for x in [-4000, -2000, 2000, 4000] for y in [-3000, -1500, 1500, 3000]]
+    self.speed_mod = 2
     self.depth_weight = .015
     
-    #for debugging
+    #for debugging. Keypoints to plot with pygame.step
     self.prints = [(np.array([0,0]), 1), (np.array([0,0]), 1)]#, np.array([0,0]), np.array([0,0]), np.array([0,0]), np.array([0,0]), np.array([0,0])]
     
+    #when we reposition we also call it darting
     self.dart = False
     self.dart_to = None
     
+    #score representing how well this robot can make passes to points
     self.current_score = 0
 
     self.pid = move_to()
   def add(self, robot, game):
-    self.robot = robot
-    self.pid.robot = robot
     action.add(self, robot, game)
+    action.add(self.pid, robot, game)
   def rate_point(self, location):
     '''
     brief: checks passes from location to self.points and generates a rating
@@ -109,6 +125,15 @@ class get_open(action):
     pind = 0
     score = 0
     for p in self.points:
+    
+      '''
+      push location away from the worst intercepting enemy
+      we scale down the local X dimension by depth_weight because we don't care as much about it 
+      as the local Y dimension
+      We push points farther if they are badly intercepted. (a free pass is pushed barely at all)
+      
+      We will then make a weighted average of these points and return it as an improvement of location
+      '''
       worst, worst_local, pangle = worst_intercept(location, p, self.enemies)
       importance = abs(20000/(100+worst))
       if worst_local[1] < 0:
@@ -120,6 +145,11 @@ class get_open(action):
       improvement_field = convert_local(improvement, pangle) + location
       improvements = improvements + improvement_field * importance * self.weights[pind]
       improv_weight += importance * self.weights[pind]
+      
+      #give score for good passes
+      #cap available score from a single pass so robots don't run back as much
+      if worst > 500:
+        worst = 500
       score += worst * self.weights[pind]
       
       #debugging
@@ -151,21 +181,23 @@ class get_open(action):
     returns: better location, better score
     '''
     first = True
-    target_point = self.robot.loc*np.array([1,-1])
+    target_point = self.points[0]
     for i in range(self.samples):
-      sample_point = np.random.uniform(-1, 1, size = [2])*np.array([2000, 2000]) + target_point
+      sample_point = self.sample_points[i]#
+      for i in range(10):
+        improvement, score = self.rate_point(sample_point)
+        sample_point = (improvement - sample_point)*55 + sample_point
       _, score = self.rate_point(sample_point)
+      
+      
       for a in self.allies:
-        if np.linalg.norm(a.loc - sample_point) < self.stand_off_distance*2:
+        if np.linalg.norm(a.loc - sample_point) < self.stand_off_distance*3 and self.robot.task == a.task:
           score -= 500
       if first or score > best:
         best = score
         best_point = sample_point
         first = False
     return best_point, best
-    # vect = self.robot.loc - a.loc
-    # vect = 1000 * vect / np.linalg.norm(vect)
-    # return a.loc + vect
   def run(self):
     #if we are too close to an allie dart
     if not self.dart:
@@ -189,15 +221,16 @@ class get_open(action):
       
     #if we aren't darting do the normal thing
     if self.dart == 0:
-      improvements, score = self.rate_point(self.robot.loc)
-      
+      improvement, score = self.rate_point(self.robot.loc)
+      #print(score)
       #if we aren't doing the normal thing well dart
       if score < self.freakout_weight:
         self.dart = 120
         self.dart_to, score = self.get_better_loc()
-        #print("freak I'm scared", self.robot.id, self.robot.loc, self.dart_to, self.current_score, score)
+        print("freak I'm scared", self.robot.id, self.robot.loc, self.dart_to, self.current_score, score)
       self.current_score = score
-      move_to = improvements * .3 + self.move_to * .7
+      move_to = self.robot.loc + self.speed_mod*(improvement - self.robot.loc)
+      move_to = move_to * .7 + self.move_to * .3
     
     
     point_dir = self.points[0] - self.robot.loc
@@ -217,6 +250,10 @@ if __name__ == "__main__":
   clock.tick(60)
   ttime = clock.tick()
   ind = 2
+  
+  '''
+  create the strikers
+  '''
   for i in game.yellow_robots[1:3]:
     guard_locs = [game.yellow_robots[0].loc]
     # for y in game.yellow_robots:
@@ -224,21 +261,36 @@ if __name__ == "__main__":
         # guard_locs.append(y.loc)
     guard_locs.append([-5100,0])
     game.add_action(get_open(guard_locs, [1.3,0.4], game.blue_robots, game.yellow_robots), i.id, False)
+    i.task = 1
     ind += 1
     if ind == max_bots_per_team:
       ind = 1
+      
+  '''
+  Create the fielders
+  '''
   ind = 1
   for i in game.yellow_robots[3:5]:
-    i.task = ind
-    game.add_action(get_open([game.yellow_robots[0].loc, game.yellow_robots[ind].loc], [1,1], game.blue_robots, game.yellow_robots), i.id, False)
+    i.task = 2
+    game.add_action(get_open([game.yellow_robots[0].loc, game.yellow_robots[ind].loc], [1,.7], game.blue_robots, game.yellow_robots), i.id, False)
     ind += 1
+    
+    
   while 1:
     ind = 1
+    '''
+    points must be constantly updated
+    '''
     while ind != max_bots_per_team - 1:
       game.yellow_robots[ind].action.points[0] = game.yellow_robots[0].loc
       if ind >= 3 and ind < 5:
         game.yellow_robots[ind].action.points[1] = game.yellow_robots[ind - 2].loc
       ind += 1
+      
+      
+    '''
+    handle resets and allow robots to be placed for debugging
+    '''
     for event in pygame.event.get():
       if event.type == QUIT:
         pygame.quit()

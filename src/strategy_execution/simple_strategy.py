@@ -2,12 +2,13 @@ import numpy as np
 import math
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, 'C:/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '../..')
 from basic_skills.action import *
 from basic_skills.move_to.move_to import *
 from basic_skills.cover.cover import *
 from basic_skills.orbit_ball.orbit_ball import *
 from basic_skills.get_open.get_open import *
+from basic_skills.get_open.get_open_with_ball import *
 from basic_skills.ball_interception.Ball_Interception2 import *
 from basic_skills.action_sequence import *
 from basic_skills.helper_functions import *
@@ -95,7 +96,7 @@ def rate_pass(p1, p2, enemies):
       
   if worst < 0:
     worst = 0
-  safety = 400
+  safety = 200
   if worst > safety:
     worst = safety
   worst = worst/safety
@@ -207,22 +208,22 @@ class strategy:
         self.attacking = True
         self.neutral = False
       #two "strikers" set up to make shots
-      for fa in free_allies[:-2]:
+      for fa in free_allies:
         if not type(fa.action) is get_open:
-          self.game.add_action(get_open([self.game.ball.loc, self.their_goal],[1,0.3], self.enemies, self.allies), fa.id, self.is_blue)
+          self.game.add_action(get_open([self.game.ball.loc, self.their_goal],[1.3,0.4], self.enemies, self.allies), fa.id, self.is_blue)
         else:
           fa.action.points = [self.game.ball.loc, self.their_goal]
         fa.role = 0
         
       #two "fielders" set up double play shots
-      i = 0
-      for fa in free_allies[-2:]:
-        if not type(fa.action) is get_open:
-          self.game.add_action(get_open([self.game.ball.loc, free_allies[i].loc],[1,.7], self.enemies, self.allies), fa.id, self.is_blue)
-        else:
-          fa.action.points = [self.game.ball.loc, free_allies[i].loc]
-        i += 1
-        fa.role = i
+      # i = 0
+      # for fa in free_allies[-2:]:
+        # if not type(fa.action) is get_open:
+          # self.game.add_action(get_open([self.game.ball.loc, free_allies[i].loc],[1,1], self.enemies, self.allies), fa.id, self.is_blue)
+        # else:
+          # fa.action.points = [self.game.ball.loc, free_allies[i].loc]
+        # i += 1
+        # fa.role = i
     
     
       
@@ -232,7 +233,7 @@ class strategy:
         self.passing = 0
     
     
-    good_pass_threshold = .3
+    good_pass_threshold = .5
     #print()
     #if we have the ball
     if self.game.ball.controler != False and self.game.ball.controler.is_blue == self.is_blue:
@@ -242,11 +243,13 @@ class strategy:
       best_value = 0
       first = True
       kicking = False
+      want_to_kick = False
       if goal_shot > good_pass_threshold:
         #line up for the goal
         best_pass_loc = self.their_goal
         shot_vec = self.their_goal - self.game.ball.controler.loc
-        if abs(normalize_angle(self.game.ball.controler.rot + math.atan2(shot_vec[1], shot_vec[0]))) < .02:
+        want_to_kick = True
+        if abs(normalize_angle(self.game.ball.controler.rot + math.atan2(shot_vec[1], shot_vec[0]))) < .1:
           
           print("shoot at goal", goal_shot, self.is_blue, self.game.ball.velocity)
           #shoot at the goal
@@ -256,11 +259,11 @@ class strategy:
           kicking = True
       else:
         #aproximation of the value of having the ball with the current controller
-        controler_value = 6
-        for e in self.enemies:
+        controler_value = 7
+        #for e in self.enemies:
           #if an enemy is close to you it is bad
-          if np.linalg.norm(e.loc - self.game.ball.loc) < 750:
-            controler_value -= 10
+          # if np.linalg.norm(e.loc - self.game.ball.loc) < 750:
+            # controler_value -= 10
         values = rate_positions([fa.loc for fa in free_allies], self.enemies, [self.their_goal])
         self.internal_ratings = [(self.game.ball.controler.loc, controler_value)]
           
@@ -276,17 +279,23 @@ class strategy:
             first = False
             best_pass_vec = free_allies[i].loc - self.game.ball.controler.loc
         #if the best shot is good pass
-        if best_pass_rating > good_pass_threshold and best_value > controler_value and abs(normalize_angle(self.game.ball.controler.rot + math.atan2(best_pass_vec[1], best_pass_vec[0]))) < .02:
-          print("pass to ", free_allies[i].id, self.is_blue, pass_rating)
-          self.passing = self.pass_wait
-          self.pass_reciever = best_allie
-          self.game.add_action(intercept_ball(), best_allie.id, self.is_blue)
-          best_allie.action.iterations = 0
-          self.game.add_action(sudo_kick(), self.game.ball.controler.id, self.is_blue)
-          kicking = True
-      if not kicking:
-        self.game.add_action(orbit_ball(best_pass_loc), self.game.ball.controler.id, self.is_blue)
-      
+        if best_pass_rating > good_pass_threshold and best_value > controler_value:
+          want_to_kick = True
+          if abs(normalize_angle(self.game.ball.controler.rot + math.atan2(best_pass_vec[1], best_pass_vec[0]))) < .01:
+            print("pass to ", free_allies[i].id, self.is_blue, pass_rating)
+            self.passing = self.pass_wait
+            self.pass_reciever = best_allie
+            self.game.add_action(intercept_ball(), best_allie.id, self.is_blue)
+            best_allie.action.iterations = 0
+            self.game.add_action(sudo_kick(), self.game.ball.controler.id, self.is_blue)
+            kicking = True
+          # elif abs(normalize_angle(self.game.ball.controler.rot + math.atan2(best_pass_vec[1], best_pass_vec[0]))) < .5:
+            # self.game.add_action(cover(best_allie.loc, self.game.ball.controler, interpose_factor = 1), best_allie.id, self.is_blue)
+      if not kicking and not want_to_kick:
+        game.add_action(get_open_with_ball([best_allie.loc], [1], self.enemies), self.game.ball.controler.id, self.is_blue)
+      elif not kicking:
+        game.add_action(orbit_ball(best_pass_loc), self.game.ball.controler.id, self.is_blue)
+      #print(self.game.ball.controler.action)
     
   def neutral_strategy(self):
     print("I am indifferent to this situation", self.neutral)
@@ -368,7 +377,7 @@ if __name__ == "__main__":
       kp = yellow_strategy.internal_ratings
     else:
       kp = []
-    game.step()#key_points = kp
-    blue_strategy.update()
+    game.step(key_points = kp)
+    #blue_strategy.update()
     yellow_strategy.update()
     ttime = new_time
