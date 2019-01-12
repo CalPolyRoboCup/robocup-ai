@@ -19,13 +19,18 @@ class orbit_ball(action):
     self.move_to = False
     self.target_loc = target_loc
     self.spiral_factor = .35
-    self.speed_mod_factor = 4
+    self.speed_mod_factor = 7
     self.offset = offset
   def add(self, robot, game):
     self.robot = robot
     self.pid.robot = robot
     action.add(self, robot, game)
   def run(self):
+    '''
+    we pull in to spiral_factor and rotate around by (1 - spiral_factor)
+    we also push the target location out by speed_mod_factor if it is too close
+      so that we move faster
+    '''
     ball_extrapolation = self.game.ball.loc + self.game.ball.velocity/10
     robot_vec = self.robot.loc - ball_extrapolation
     #print(self.robot.loc, ball_extrapolation)
@@ -40,7 +45,8 @@ class orbit_ball(action):
     orbit_vec = convert_local(target_loc, rotation_angle)
     move_to = orbit_vec + ball_extrapolation
     speed_mod_vec = move_to - self.robot.loc
-    move_to = move_to + speed_mod_vec * abs(rotation_angle) * self.speed_mod_factor
+    if np.linalg.norm(speed_mod_vec) < 300:
+      move_to = move_to + speed_mod_vec * abs(rotation_angle) * self.speed_mod_factor
     
     rot_vec = convert_local(target_loc, -rotation_angle) * .85
     point_dir = (ball_extrapolation + rot_vec) - self.robot.loc
