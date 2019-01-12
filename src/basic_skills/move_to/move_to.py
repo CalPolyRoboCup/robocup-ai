@@ -47,16 +47,19 @@ class move_to(action):
   def run(self):
     my_Robots = []
     for robot in self.game.blue_robots :
-        my_Robots.append( (robot.loc[0], robot.loc[1], 90 ) ) # actual radius 90
+        my_Robots.append( (robot.loc[0], robot.loc[1], 90 ) ) # ( X, Y, radius)
+    
     for robot in self.game.yellow_robots :
         if (self.robot.loc[0] != robot.loc[0]) and (self.robot.loc[1] != robot.loc[1]) :
-            my_Robots.append( (robot.loc[0], robot.loc[1], 25 ) )
+            my_Robots.append( (robot.loc[0], robot.loc[1], 90 ) )
 
     rrt_strategy = rrt(
-            [self.robot.loc[0], self.robot.loc[1]],
-            self.target_loc,
-            my_Robots,
-            [0,10])
+            [self.robot.loc[0], self.robot.loc[1]], # start Point
+            [self.target_loc[0], self.target_loc[1]], # target Point
+            [self.game.ball.loc[0], self.game.ball.loc[1]], # ball Point
+            my_Robots, # obstacle list
+            [-6000, 6000], # X- randomization constraints, scale according to field dimensions
+            [-4500, 4500]) # Y- randomization constraints, scale according to field dimensions 
     next_Point = rrt_strategy.computeSolutionPath()
     self.next_Point = np.array( next_Point, dtype = np.float64)
     self.target_loc = self.next_Point

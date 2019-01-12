@@ -10,17 +10,21 @@ class rrt():
     def __init__(self, 
             start_Point, # coordinates of start Point
             goal_Point, # coordinates of goal Point
+            ball_Point, # coordinates of ball Point
             obstacle_List, # List of obstacle ( x, y, radius )
-            randomization_Constraints, # List of min/max constraints for random Point Sampling
-            growth_Factor = 500, # Amount by which a new branch will grow towards Sample Point
-            goal_SampleRate = 10, # probability of sampling the Goal point
-            MAX_ITER = 15,
+            X_randomization_Constraints, # List of min/max constraints for random Point Sampling
+            Y_randomization_Constraints, # List of min/max constraints for random Point Sampling 
+            growth_Factor = 180, # Amount by which a new branch will grow
+            goal_SampleRate = 5, # probability of sampling the Goal point
+            MAX_ITER = 50, # maximum num of script iterations
             ANIMATE = False) : # animation toggle
 
         self.start_Point = Point ( start_Point[0], start_Point[1] )
         self.goal_Point = Point ( goal_Point[0], goal_Point[1] )
-        self.min_Rand_Constraint = randomization_Constraints[0]
-        self.max_Rand_Constraint = randomization_Constraints[1]
+        self.ball_Point = Point ( ball_Point[0], ball_Point[1] )
+        self.X_Rand_Constraints = X_randomization_Constraints
+        self.Y_Rand_Constraints = Y_randomization_Constraints
+        # Hard coded attributes
         self.growth_Factor = growth_Factor
         self.goal_SampleRate = goal_SampleRate
         self.obstacle_List = obstacle_List
@@ -28,6 +32,7 @@ class rrt():
         self.ANIMATE = ANIMATE
 
     def computeSolutionPath(self) :
+        #print("********** NEW RRT")
         # point_List contains RRT points
         point_List = [self.start_Point]
         if self.ANIMATE : fig = plt.figure()
@@ -62,15 +67,16 @@ class rrt():
             # returns boolean based on check of distance from goal_Point to new_Point
             if self.getGoalStatus(new_Point) : reached_Goal = True
             if reached_Goal : break
-
-        # traceFinalPath( Point list)
+        
         # Animates RRT generation & solution path using Matplotlib
-        if self.ANIMATE : self.traceFinalPath(point_List)
+
         if skip_rrt or (len(point_List) == 1) :
+            #print("SKIP")
             return [ self.goal_Point.x , self.goal_Point.y ]
         else :
-            return [ point_List[1].x, point_List[1].y]
-        # self.solution_Path = traceFinalPath( point_List)
+            print("TRACE")
+            next_Point = self.traceFinalPath( point_List )
+            return [ next_Point.x, next_Point.y ]
     
     ######## METHODS
     def drawRRT(self, fig, sample_Point, point_List) :
@@ -95,15 +101,20 @@ class rrt():
         plt.pause( 0.01 )
 
     def traceFinalPath(self ,point_List) : # work in progress
-        solution_Points = [point_List[-1]]
-        # solution_Coordinate_Pairs = [ [point_List[-1].x, point_List[-1].y] ]
+        closest_Point_Index = self.getClosestPointIndex(point_List, self.goal_Point)
+        solution_Points = [point_List[closest_Point_Index]]
         for this_Point in solution_Points :
             if this_Point.preceding_Point_Index != None :
-                plt.plot( [ this_Point.x , point_List[this_Point.preceding_Point_Index].x ],
-                        [ this_Point.y , point_List[this_Point.preceding_Point_Index].y ], "-b" )
+                if self.ANIMATE : 
+                    plt.plot( 
+                            [ this_Point.x , point_List[this_Point.preceding_Point_Index].x ],
+                            [ this_Point.y , point_List[this_Point.preceding_Point_Index].y ], 
+                            "-b" 
+                            )
                 solution_Points.append( point_List[ this_Point.preceding_Point_Index])
 
-        plt.show()
+        if self.ANIMATE : plt.show()
+        return solution_Points[-1]
 
     def getGoalStatus(self, new_Point) :
         # Im still having problems with providing a solution that is as close as possible to goal
@@ -111,16 +122,16 @@ class rrt():
         dy = new_Point.y - self.goal_Point.y
         distance = math.sqrt ( dx**2 + dy**2 )
 
-        if distance <= self.growth_Factor :
-            print("True")
-            print("Start X :", self.start_Point.x)
-            print("Start Y :", self.start_Point.y)
+        #if distance <= (self.growth_Factor):
+        if distance <= 90 :
+            #print("Start X :", self.start_Point.x)
+            #print("Start Y :", self.start_Point.y)
 
-            print("X :", new_Point.x)
-            print("Y :", new_Point.y)
+            #print("X :", new_Point.x)
+            #print("Y :", new_Point.y)
             return True
         else :
-            print("NO GOAL")
+            #print("NO GOAL")
             return False
 
     def collisionDetected(self, new_Point, point_List, skip_rrt) :
@@ -132,6 +143,7 @@ class rrt():
             if distance_to_Obstacle <= 2*obstacle_Radius : # accounts for self radius & other robot
                 print("COLLISION")
                 return True
+        # WORK IN PROGRESS
         # then check for redundant point sampling
         #if skip_rrt == False :
         #    for point in point_List :
@@ -170,15 +182,14 @@ class rrt():
         if skip_rrt == False : 
             if random.randint(0,100) > self.goal_SampleRate :
                 sample_Point = Point ( 
-                        random.uniform( self.min_Rand_Constraint, self.max_Rand_Constraint) , 
-                        random.uniform( self.min_Rand_Constraint, self.max_Rand_Constraint)
-                        ) 
-            else : 
-                sample_Point = Point ( self.goal_Point.x , self.goal_Point.y) # Biased Point
+                        random.uniform( self.X_Rand_Constraints[0], self.X_Rand_Constraints[1]) , 
+                        random.uniform( self.Y_Rand_Constraints[0], self.Y_Rand_Constraints[1])
+                        )
+                return sample_Point
         
-        else : sample_Point = Point ( self.goal_Point.x , self.goal_Point.y) # Biased Point 
-        #print("SAMPLE X :", sample_Point.x)
-        #print("SAMPLE Y :", sample_Point.y)
+        sample_Point = Point ( self.goal_Point.x , self.goal_Point.y) # Biased Point 
+        # print("SAMPLE X :", sample_Point.x)
+        # print("SAMPLE Y :", sample_Point.y)
         return sample_Point
 
 class Point () :
