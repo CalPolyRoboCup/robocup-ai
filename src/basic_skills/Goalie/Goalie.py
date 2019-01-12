@@ -32,7 +32,7 @@ class goalie(action):
     push_out_distance = self.orbit + adjustment
     push_vec = self.game.ball.loc - self.goal
     
-    print(adjustment, -np.linalg.norm(push_vec))
+    #print(adjustment, -np.linalg.norm(push_vec))
     if push_out_distance + 400 > np.linalg.norm(push_vec):
       adjustment = np.linalg.norm(push_vec) - 20
     move_to = self.goal + push_vec * push_out_distance / np.linalg.norm(push_vec)
