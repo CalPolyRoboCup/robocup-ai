@@ -24,27 +24,43 @@ class move_to(action):
     self.rotD = 5.89
 
   def set_target(self, target_loc, target_rot):
-    #self.target_loc = target_loc
-    #self.target_rot = target_rot
+    self.target_loc = target_loc
+    self.target_rot = target_rot
     
     # RRT test
-    my_Robots = []
+    #my_Robots = []
     #for robot in self.game.yellow_robots :
     #    if (self.robot.loc[0] != robot.loc[0]) & (self.robot.loc[1] != robot.loc[1]) :
     #        my_Robots.append( (robot.loc[0], robot.loc[1], 25 ) )
+    #for robot in self.game.blue_robots :
+    #    my_Robots.append( (robot.loc[0], robot.loc[1], 90 ) ) # actual radius 90
+
+    #rrt_strategy = rrt(
+    #        [self.robot.loc[0], self.robot.loc[1]],
+    #        target_loc,
+    #        my_Robots,
+    #        [0,10])
+    #next_Point = rrt_strategy.computeSolutionPath()
+    #self.next_Point = np.array( next_Point, dtype = np.float64)
+    #self.target_loc = self.next_Point
+
+  def run(self):
+    my_Robots = []
     for robot in self.game.blue_robots :
-        my_Robots.append( (robot.loc[0], robot.loc[1], 90 ) )
+        my_Robots.append( (robot.loc[0], robot.loc[1], 90 ) ) # actual radius 90
+    for robot in self.game.yellow_robots :
+        if (self.robot.loc[0] != robot.loc[0]) and (self.robot.loc[1] != robot.loc[1]) :
+            my_Robots.append( (robot.loc[0], robot.loc[1], 25 ) )
 
     rrt_strategy = rrt(
             [self.robot.loc[0], self.robot.loc[1]],
-            target_loc,
+            self.target_loc,
             my_Robots,
             [0,10])
     next_Point = rrt_strategy.computeSolutionPath()
     self.next_Point = np.array( next_Point, dtype = np.float64)
     self.target_loc = self.next_Point
 
-  def run(self):
     norm_vel, tang_vel = self.PID_loc() #
     rot_vel = self.PID_rot()
     action = [0,0,norm_vel, tang_vel, rot_vel]
