@@ -1,3 +1,4 @@
+import os
 import sys
 #replace this with your path to robocup-ai
 sys.path.insert(0, '..')
@@ -80,15 +81,21 @@ class PYsim:
 
     self.font = pygame.font.SysFont("Impact", 55)
     self.screen = pygame.display.set_mode(self.screen_res, pygame.HWSURFACE, 32)
-    self.field_image = pygame.image.load("../resources/Field.png").convert_alpha()
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, "../resources/Field.png")
+    self.field_image = pygame.image.load(filename).convert_alpha()
     field_scale = self.field_image.get_rect().size * self.screen_res / np.array([1040, 740])
     field_scale = (int(field_scale[0]), int(field_scale[1]))
     self.field_image = pygame.transform.scale(self.field_image, field_scale)
-    self.blue_robot_image = pygame.image.load("../resources/BlueBot.png").convert_alpha()
+    
+    filename = os.path.join(dirname, "../resources/BlueBot.png")
+    self.blue_robot_image = pygame.image.load(filename).convert_alpha()
     robot_scale = 2*robot_radius*self.screen_res/self.field_dims
     robot_scale = (int(robot_scale[0]), int(robot_scale[1]))
     self.blue_robot_image = pygame.transform.scale(self.blue_robot_image, robot_scale)
-    self.yellow_robot_image = pygame.image.load("../resources/YellowBot.png").convert_alpha()
+    
+    filename = os.path.join(dirname, "../resources/YellowBot.png")
+    self.yellow_robot_image = pygame.image.load(filename).convert_alpha()
     self.yellow_robot_image = pygame.transform.scale(self.yellow_robot_image, robot_scale)
     
     self.time_step = 1/60
