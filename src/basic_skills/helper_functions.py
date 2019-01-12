@@ -38,8 +38,8 @@ def normalize_angle(angle):
     else:
       return angle
       
-#if location is in an end zone a point just outside of the end zone is returned
-def out_of_endzone(location):
+#if location is in an goalie zone a point just outside of the goalie_area is returned
+def out_of_goalie_area(location):
   goal1 = np.array([-5000,0])
   goal2 = np.array([5000,0])
   endzone_radius = 1500
