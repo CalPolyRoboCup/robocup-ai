@@ -152,11 +152,6 @@ class get_open(action):
         worst = 500
       score += worst * self.weights[pind]
       
-      #debugging
-      # if pind == 0:
-        # self.prints[pind] = (improvement_field, self.weights[pind]*10)
-      # else:
-        # self.prints[pind] = (improvement_field, self.weights[pind]*-10)
       if pind == 0:
         self.prints[pind] = (convert_local(worst_local, pangle) + location, self.weights[pind]*10)
       else:
@@ -212,7 +207,6 @@ class get_open(action):
           
     #while darting move to "better loc"
     if self.dart > 0:
-      #print(self.robot.id, "darting")
       move_to = self.dart_to
       if self.pid.done() and self.dart != 120:
         print("finished", self.robot.loc, self.robot.id)
@@ -222,12 +216,12 @@ class get_open(action):
     #if we aren't darting do the normal thing
     if self.dart == 0:
       improvement, score = self.rate_point(self.robot.loc)
-      #print(score)
-      #if we aren't doing the normal thing well dart
+      #if we aren't doing well
+      #dart
       if score < self.freakout_weight:
         self.dart = 120
         self.dart_to, score = self.get_better_loc()
-        print("freak I'm scared", self.robot.id, self.robot.loc, self.dart_to, self.current_score, score)
+        #print("freak I'm scared", self.robot.id, self.robot.loc, self.dart_to, self.current_score, score)
       self.current_score = score
       move_to = self.robot.loc + self.speed_mod*(improvement - self.robot.loc)
       move_to = move_to * .7 + self.move_to * .3
@@ -241,6 +235,42 @@ class get_open(action):
     self.move_to = move_to
     return actions
     
+class striker(get_open):
+  def __init__(self, ball_controller, goal, game):
+    self.goal = goal
+    self.ball_controller = ball_controller
+    if ball_controller.is_blue:
+      self.allies = game.blue_robots
+      self.enemies = game.yellow_robots
+    else:
+      self.allies = game.yellow_robots
+      self.enemies = game.blue_robots
+    get_open.__init__(self, [ball_controller.loc, goal], [1.3, 0.4], self.enemies, self.allies)
+  def add(self, robot, game):
+    robot.task = 1
+    get_open.add(self, robot, game)
+  def run(self):
+    self.points[0] = self.ball_controller.loc
+    return get_open.run(self)
+    
+class fielder(get_open):
+  def __init__(self, ball_controller, target_to_support, game):
+    self.target_to_support = target_to_support
+    self.ball_controller = ball_controller
+    if ball_controller.is_blue:
+      self.allies = game.blue_robots
+      self.enemies = game.yellow_robots
+    else:
+      self.allies = game.yellow_robots
+      self.enemies = game.blue_robots
+    get_open.__init__(self, [target_to_support.loc, ball_controller.loc], [0.7, 1], self.enemies, self.allies)
+  def add(self, robot, game):
+    robot.task = 2
+    get_open.add(self, robot, game)
+  def run(self):
+    self.points[0] = self.target_to_support.loc
+    self.points[1] = self.ball_controller.loc
+    return get_open.run(self)
     
 
 if __name__ == "__main__":
@@ -249,43 +279,21 @@ if __name__ == "__main__":
   clock = pygame.time.Clock()
   clock.tick(60)
   ttime = clock.tick()
-  ind = 2
   
   '''
   create the strikers
   '''
   for i in game.yellow_robots[1:3]:
-    guard_locs = [game.yellow_robots[0].loc]
-    # for y in game.yellow_robots:
-      # if y.id != i.id:
-        # guard_locs.append(y.loc)
-    guard_locs.append([-5100,0])
-    game.add_action(get_open(guard_locs, [1.3,0.4], game.blue_robots, game.yellow_robots), i.id, False)
-    i.task = 1
-    ind += 1
-    if ind == max_bots_per_team:
-      ind = 1
+    game.add_action(striker(game.yellow_robots[0], np.array([-5000,0]), game), i.id, False)
       
   '''
   Create the fielders
   '''
-  ind = 1
   for i in game.yellow_robots[3:5]:
-    i.task = 2
-    game.add_action(get_open([game.yellow_robots[0].loc, game.yellow_robots[ind].loc], [1,.7], game.blue_robots, game.yellow_robots), i.id, False)
-    ind += 1
+    game.add_action(fielder(game.yellow_robots[0], game.yellow_robots[i.id - 2], game), i.id, False)
     
     
   while 1:
-    ind = 1
-    '''
-    points must be constantly updated
-    '''
-    while ind != max_bots_per_team - 1:
-      game.yellow_robots[ind].action.points[0] = game.yellow_robots[0].loc
-      if ind >= 3 and ind < 5:
-        game.yellow_robots[ind].action.points[1] = game.yellow_robots[ind - 2].loc
-      ind += 1
       
       
     '''
