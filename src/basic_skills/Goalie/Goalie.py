@@ -1,6 +1,5 @@
 import numpy as np
 import sys
-#replace this with your path to robocup-ai
 sys.path.insert(0, '../..')
 from basic_skills.action import *
 from basic_skills.move_to.move_to import move_to
@@ -33,8 +32,8 @@ class goalie(action):
     push_vec = self.game.ball.loc - self.goal
     
     #print(adjustment, -np.linalg.norm(push_vec))
-    if push_out_distance + 400 > np.linalg.norm(push_vec):
-      adjustment = np.linalg.norm(push_vec) - 20
+    if push_out_distance > np.linalg.norm(push_vec):
+      push_out_distance = np.linalg.norm(push_vec) - 40
     move_to = self.goal + push_vec * push_out_distance / np.linalg.norm(push_vec)
     point_dir = self.game.ball.loc - self.robot.loc
     target_rot = -math.atan2(point_dir[1], point_dir[0])
@@ -64,10 +63,13 @@ if __name__ == "__main__":
         sys.exit()
         
       
-      pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
-      #left mouse button
-      if pressed1:
-        game.ball_internal.loc = game.convert_to_field_position(pygame.mouse.get_pos())
+      if event.type == MOUSEBUTTONDOWN:
+        pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
+        if pressed1:
+          game.ball_internal.loc = game.convert_to_field_position(pygame.mouse.get_pos())
+          game.ball_internal.velocity = np.array([0,0])
+        if pressed3:
+          game.ball_internal.velocity = (game.convert_to_field_position(pygame.mouse.get_pos()) - game.ball_internal.loc)
     new_time = clock.tick()
     game.step()
     ttime = new_time
