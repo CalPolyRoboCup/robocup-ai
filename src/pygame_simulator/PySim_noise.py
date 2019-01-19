@@ -371,6 +371,16 @@ class PYsim:
         return reward, True
     return self.ball_internal.loc[0]/1000, False
     
+  def ball_update(self, delta_time):
+    '''
+    if the ball is free its spin will adjust its velocity slightly
+    '''
+    if not self.ball_internal.controler:
+      self.ball_internal.velocity = self.ball_internal.velocity + self.ball_internal.spin
+      self.ball_internal.spin = self.ball_internal.spin * self.spin_degen
+    self.ball_internal.loc = self.ball_internal.loc + self.ball_internal.velocity * delta_time
+    self.ball_internal.velocity = self.ball_internal.velocity * self.ball_friction_factor
+    
   def step(self, delta_time = .01666666, key_points = []):
     state = self.get_state()
     self.ball_internal.controler = False
@@ -382,16 +392,8 @@ class PYsim:
     
     self.do_collision(delta_time)
     
-    '''
-    if the ball is free its spin will adjust its velocity slightly
-    '''
-    # if (np.linalg.norm(self.ball_internal.spin) > max_ball_spin):
-      # self.ball_internal.spin = self.ball_internal.spin * max_ball_spin / np.linalg.norm(self.ball_internal.spin)
-    if not self.ball_internal.controler:
-      self.ball_internal.velocity = self.ball_internal.velocity + self.ball_internal.spin
-      self.ball_internal.spin = self.ball_internal.spin * self.spin_degen
-    self.ball_internal.loc = self.ball_internal.loc + self.ball_internal.velocity * delta_time
-    self.ball_internal.velocity = self.ball_internal.velocity * self.ball_friction_factor
+    self.ball_update(delta_time)
+    
     self.draw(key_points)
     blue_reward, transition = self.get_reward()
     if transition:
