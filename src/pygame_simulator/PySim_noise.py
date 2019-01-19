@@ -6,6 +6,7 @@ sys.path.insert(0, '..')
 from basic_skills.robot import *
 from basic_skills.action import *
 from basic_skills.helper_functions import *
+from pygame_simulator.ball import ball
 
 #for vector math
 import numpy as np
@@ -26,22 +27,20 @@ ball           x, y, observed
 allie_robots    x, y, orientation
 enemy_robots    x, y, orientation
 '''
-
-#constants
-#sorry about the global variables
-robot_radius = 90
-ball_radius = 25
     
 import pygame
 
 from pygame.locals import *
 
-pygame.init()
-
 default_formation = [[-1000,0],[-2000, 500], [-2000, -500], [-3000, 1000], [-3000, -1000], [-4500, 0]]
     
 class PYsim:
   def __init__(self, max_bots_per_team, starting_formation = default_formation):
+  
+    #robot and ball radii
+    self.robot_radius = 90
+    self.ball_radius = 25
+  
     self.max_bots_per_team = max_bots_per_team
     self.blue_robots = [robot(True, i, self) for i in range(self.max_bots_per_team)]
     self.yellow_robots = [robot(False, i, self) for i in range(self.max_bots_per_team)]
@@ -69,7 +68,7 @@ class PYsim:
     
     filename = os.path.join(dirname, "../resources/BlueBot.png")
     self.blue_robot_image = pygame.image.load(filename).convert_alpha()
-    robot_scale = 2*robot_radius*self.screen_res/self.field_dims
+    robot_scale = 2*self.robot_radius*self.screen_res/self.field_dims
     robot_scale = (int(robot_scale[0]), int(robot_scale[1]))
     self.blue_robot_image = pygame.transform.scale(self.blue_robot_image, robot_scale)
     
@@ -82,6 +81,63 @@ class PYsim:
     
     self.ball = ball()
     self.ball_internal = ball()
+    
+    '''
+    physics parameters
+    '''
+
+    #kicker refactory period
+    self.kick_cd = 180
+    
+    #hit box for kick
+    self.kick_length = 40
+    self.kick_width = 70
+    
+    #kick force
+    self.kick_delta_V = 1100
+    
+    #hit box for spinner
+    self.spin_length = 25
+    self.spin_width = 100
+    
+    #spin force when touching
+    self.spin_lin_accel = 5
+    
+    #stored spin force after contact broken (leaving it equal to spin_lin_accel works well)
+    self.spin_rot_accel = 5
+    
+    #how much acceleration can be stored in spin
+    self.max_ball_spin = 4
+    
+    #how quickly the ball spins up (0 to 1 inclusive) larger is slower
+    self.spin_accel_rate = .85
+    
+    #how fast the current robot velocity changes to the target velocity (0 to 1 inclusive) larger is slower
+    self.accel_rate = .99
+    
+    #how fast the robot can move
+    self.max_speed = 3000
+    
+    #how fast the robot can turn (radians)
+    self.max_angular_speed = 2
+    
+    #mass of the ball affects collision push out speed
+    self.ball_mass = 1
+    
+    #1 perfectly elastic (bounces)
+    #0 perfectly inelastic (sticks)
+    self.elasticity_factor = .5
+    
+    #how quickly the ball looses spin
+    self.spin_degen = .75
+    
+    #how quickly the ball slows down when not controlled (larger slows down less)
+    self.ball_friction_factor = .999
+    
+    #noise parameterization
+    self.translation_noise = 0
+    self.rotation_noise = 0
+    self.vanish_prob = 0
     
     self.reset()
     
@@ -116,7 +172,16 @@ class PYsim:
     return (loc - self.field_upper_left)*self.screen_res/self.field_dims - np.array(dims)/2
     
   def draw(self, key_points = []):
-    #self.screen.fill((150,150,150))
+    '''
+    brief: render the game
+    params: key_points - points to plot for debugging. A list of values. Values can be a [x,y] point or a tuple of ([x,y], size).
+                          if size is negative the color is orange 
+    '''
+    self.render_game()
+    self.render_key_points(key_points)
+    pygame.display.update()
+    
+  def render_game(self):
     '''
     render the game
     '''
@@ -131,8 +196,9 @@ class PYsim:
       position = self.convert_to_screen_position(yr.loc, rot_image.get_rect().size)
       self.screen.blit(rot_image, position)
     position = self.convert_to_screen_position(self.ball_internal.loc)
-    pygame.draw.circle(self.screen, (255,55,0), (int(position[0]), int(position[1])), int(ball_radius*self.screen_res[0]/self.field_dims[0]))
+    pygame.draw.circle(self.screen, (255,55,0), (int(position[0]), int(position[1])), int(self.ball_radius*self.screen_res[0]/self.field_dims[0]))
     
+  def render_key_points(self, key_points):
     '''
     render the key points
     '''
@@ -147,155 +213,138 @@ class PYsim:
       else:
         kp = self.convert_to_screen_position(np.array(kp))
         pygame.draw.circle(self.screen, (155,155,0), (int(kp[0]), int(kp[1])), int(ball_radius*self.screen_res[0]/self.field_dims[0])*4)
-    pygame.display.update()
     
-  def update_bot(self, robot, delta_time):
-    
-    stime = time.time()
-    #kicker refactory period
-    KICK_CD = 180
-    
-    #hit box for kick
-    kick_length = 40
-    kick_width = 70
-    
-    #kick force
-    kick_delta_V = 1100
-    
-    #hit box for spinner
-    spin_length = 25
-    spin_width = 100
-    
-    #spin force when touching
-    spin_lin_accel = 5
-    
-    #stored spin force after contact broken (leaving it equal to spin_lin_accel works well)
-    spin_rot_accel = 5
-    
-    #how much acceleration can be stored in spin
-    max_ball_spin = 4
-    
-    #how quickly the ball spins up (0 to 1 inclusive) larger is slower
-    spin_accel_rate = .85
-    
-    
-    
-    #how fast the current robot velocity changes to the target velocity (0 to 1 inclusive) larger is slower
-    accel_rate = .99
-    
-    #how fast the robot can move
-    max_speed = 3000
-    
-    #how fast the robot can turn (radians)
-    max_angular_speed = 2
-    
+  def update_bot_spinner(self, robot, delta_time):
     '''
     spinner stuff
     '''
     ball_robot_vector = self.ball_internal.loc - robot.loc
     robot_local_ball_loc = convert_local(ball_robot_vector, -robot.rot)
-    if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < robot_radius + spin_length + ball_radius
-      and abs(robot_local_ball_loc[1]) < spin_width/2):
+    if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < self.robot_radius + self.spin_length + self.ball_radius
+      and abs(robot_local_ball_loc[1]) < self.spin_width/2):
       
       #self.ball_internal.spin = self.ball_internal.spin - ball_robot_vector/np.linalg.norm(ball_robot_vector) * spin_rot_accel
       self.ball_internal.controler = robot
-      pull_vel = robot.loc + convert_local([robot_radius + ball_radius, 0], robot.rot) - self.ball_internal.loc
-      pull_vel = pull_vel / np.linalg.norm(pull_vel) * max_ball_spin
+      pull_vel = robot.loc + convert_local([self.robot_radius + self.ball_radius, 0], robot.rot) - self.ball_internal.loc
+      pull_vel = pull_vel / np.linalg.norm(pull_vel) * self.max_ball_spin
       #print(pull_vel)
-      self.ball_internal.spin = self.ball_internal.spin * spin_accel_rate + pull_vel * (1-spin_accel_rate)
-      self.ball_internal.velocity = self.ball_internal.velocity * spin_accel_rate + pull_vel * (1-spin_accel_rate)
+      self.ball_internal.spin = self.ball_internal.spin * self.spin_accel_rate + pull_vel * (1-self.spin_accel_rate)
+      self.ball_internal.velocity = self.ball_internal.velocity * self.spin_accel_rate + pull_vel * (1-self.spin_accel_rate)
       #print("spin - ",robot.id, robot.is_blue, " - ", pull_vel, self.ball_internal.velocity)
-      
-    action = robot.run_action()
-    if action == None:
-      action = [0,0,0,0,0]
-      
+    
+  def update_bot_kicker(self, robot, action):
     '''
-    kicking stuff
+    brief: updates a robot's kicker
+    params: robot - robot to update 
+            action - the action taken by the robot
     '''
-      
+    ball_robot_vector = self.ball_internal.loc - robot.loc
+    robot_local_ball_loc = convert_local(ball_robot_vector, -robot.rot)
     if robot.kick_cooldown > 0:
       robot.kick_cooldown -= 1
     if action[0] and robot.kick_cooldown == 0:
       #print("kick")
-      robot.kick_cooldown = KICK_CD
+      robot.kick_cooldown = self.kick_cd
       #print(robot_local_ball_loc[0] > 0, robot_local_ball_loc[0] < robot_radius + kick_length + ball_radius, abs(robot_local_ball_loc[1]) > kick_width/2)
-      if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < robot_radius + kick_length + ball_radius
-        and abs(robot_local_ball_loc[1]) < kick_width/2):
-        self.ball_internal.velocity = self.ball_internal.velocity + kick_delta_V * ball_robot_vector / np.linalg.norm(ball_robot_vector)
+      if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < self.robot_radius + self.kick_length + self.ball_radius
+        and abs(robot_local_ball_loc[1]) < self.kick_width/2):
+        self.ball_internal.velocity = self.ball_internal.velocity + self.kick_delta_V * np.array([np.cos(-robot.rot), np.sin(-robot.rot)])
     
+  def update_bot_movement(self, robot, action, delta_time):
     '''
-    movement stuff
+    brief: updates a robot's movement
+    params: robot - robot to update 
+            action - the action taken by the robot
+            delta_time - time since last update
     '''
     
     #15.3846 is there to make control magnitudes similar to GRsim
-    robot.velocity = robot.velocity*accel_rate + convert_local(np.array(action[2:4])*15.3846, robot.rot) * (1-accel_rate)
-    robot.rot_vel = robot.rot_vel*accel_rate + action[4] * (1-accel_rate)
+    robot.velocity = robot.velocity*self.accel_rate + convert_local(np.array(action[2:4])*15.3846, robot.rot) * (1-self.accel_rate)
+    robot.rot_vel = robot.rot_vel*self.accel_rate + action[4] * (1-self.accel_rate)
     
     '''
     limit max speed
     '''
-    if np.linalg.norm(robot.velocity) > max_speed:
+    if np.linalg.norm(robot.velocity) > self.max_speed:
       robot.velocity = robot.velocity * max_speed/np.linalg.norm(robot.velocity)
-    if robot.rot_vel > max_angular_speed:
-      robot.rot_vel = max_angular_speed
-    if robot.rot_vel < -max_angular_speed:
-      robot.rot_vel = -max_angular_speed
+    if robot.rot_vel > self.max_angular_speed:
+      robot.rot_vel = self.max_angular_speed
+    if robot.rot_vel < -self.max_angular_speed:
+      robot.rot_vel = -self.max_angular_speed
     
     robot.loc = robot.loc + robot.velocity * delta_time
     robot.rot = robot.rot + robot.rot_vel * delta_time
-    # if time.time() - stime > .04:
-      # print("taking too long", robot.id, time.time() - stime)
-    return 0
+    
+  def update_bot(self, robot, delta_time):
+    '''
+    brief - updates robot physics for a delta_time time step
+    params - robot: the robot to update
+            delta_time: the time between this step and the previous update
+    '''
+    self.update_bot_spinner(robot, delta_time)
+    action = robot.run_action()
+    if action == None:
+      action = [0,0,0,0,0]
+    self.update_bot_kicker(robot, action)
+    self.update_bot_movement(robot, action, delta_time)
+    
+  def do_ball_collision(self, robot, ball_held, delta_time):
+    '''
+    brief: handle collisions with balls
+    params: robot - the robot to do collision for
+            ball_held - whether the ball has already been pushed out of a robot
+    return: ball_held - an updated version of ball_held
+    '''
+    ball_vector = self.ball_internal.loc - robot.loc
+    ball_distance = np.linalg.norm(ball_vector)
+    if ball_distance < self.robot_radius + self.ball_radius:
+      push_out_vector = ball_vector * ((self.robot_radius + self.ball_radius) - ball_distance)/ball_distance
+      bounce_velocity = drop_perpendicular(self.ball_internal.velocity, np.array([0,0]), ball_vector) * self.elasticity_factor
+      '''
+      only move the ball unless anouther robot is pushing on the ball already
+      '''
+      if ball_held:
+        robot.loc = robot.loc - push_out_vector
+        self.ball_internal.velocity = self.ball_internal.velocity + push_out_vector / delta_time / self.ball_mass + bounce_velocity
+      else:
+        ball_held = True
+        self.ball_internal.velocity = self.ball_internal.velocity + push_out_vector / delta_time / self.ball_mass + bounce_velocity
+        self.ball_internal.loc = self.ball_internal.loc + push_out_vector
+    return ball_held
+    
+  def do_robot_collision(self, r, robots, delta_time):
+    '''
+    brief: handle collisions with other robots
+    params: r - robot to run collision on
+    '''
+    for o in robots:
+      distance = np.linalg.norm(r.loc - o.loc)
+      if distance < 2 * self.robot_radius:
+        push_out_vector = (r.loc - o.loc) * (distance - 2*self.robot_radius)/(distance * 2)
+        r.loc = r.loc - push_out_vector
+        r.velocity = r.velocity - push_out_vector / delta_time
+        o.loc = o.loc + push_out_vector
+        o.velocity = o.velocity + push_out_vector / delta_time
     
   def do_collision(self, delta_time):
-    ball_mass = 1
-    
-    #1 perfectly elastic (bounces)
-    #0 perfectly inelastic (sticks)
-    elasticity_factor = .5
-    
+    '''
+    brief: do all collisions
+    params: delta_time - time since last update
+    '''
     robots = []
     robots.extend(self.blue_robots_internal)
     robots.extend(self.yellow_robots_internal)
-    i = 0
     ball_held = False
     for r in robots:
-      '''
-      handle collisions with other robots
-      '''
-      for o in robots[i+1:]:
-        distance = np.linalg.norm(r.loc - o.loc)
-        if distance < 2 * robot_radius:
-          push_out_vector = (r.loc - o.loc) * (distance - 2*robot_radius)/(distance * 2)
-          r.loc = r.loc - push_out_vector
-          r.velocity = r.velocity - push_out_vector / delta_time
-          o.loc = o.loc + push_out_vector
-          o.velocity = o.velocity + push_out_vector / delta_time
-          
-      '''
-      handle collisions with other balls
-      '''
-      ball_vector = self.ball_internal.loc - r.loc
-      ball_distance = np.linalg.norm(ball_vector)
-      if ball_distance < robot_radius + ball_radius:
-        push_out_vector = ball_vector * ((robot_radius + ball_radius) - ball_distance)/ball_distance
-        bounce_velocity = drop_perpendicular(self.ball_internal.velocity, np.array([0,0]), ball_vector) * elasticity_factor
-        '''
-        only move the ball unless anouther robot is pushing on the ball already
-        '''
-        if ball_held:
-          r.loc = r.loc - push_out_vector
-          self.ball_internal.velocity = self.ball_internal.velocity + push_out_vector / delta_time / ball_mass + bounce_velocity
-        else:
-          ball_held = True
-          self.ball_internal.velocity = self.ball_internal.velocity + push_out_vector / delta_time / ball_mass + bounce_velocity
-          self.ball_internal.loc = self.ball_internal.loc + push_out_vector
-      i += 1
+      robots.remove(r)
+      self.do_robot_collision(r, robots, delta_time)
+      ball_held = self.do_ball_collision(r, ball_held, delta_time)
       
   def get_reward(self):
     '''
-    checks for out of bounds and goals
+    brief: checks for out of bounds and goals
+    returns - reward: the reward for the blue team in this state
+              done: True if a goal is made or a foul is committed
     '''
     if self.ball_internal.controler != False:
       self.ball_internal.last_controler = self.ball_internal.controler
@@ -323,12 +372,6 @@ class PYsim:
     return self.ball_internal.loc[0]/1000, False
     
   def step(self, delta_time = .01666666, key_points = []):
-    #how quickly the ball looses spin
-    spin_degen = .75
-    
-    #how quickly the ball slows down when not controlled (larger slows down less)
-    ball_friction_factor = .999
-    
     state = self.get_state()
     self.ball_internal.controler = False
     
@@ -346,9 +389,9 @@ class PYsim:
       # self.ball_internal.spin = self.ball_internal.spin * max_ball_spin / np.linalg.norm(self.ball_internal.spin)
     if not self.ball_internal.controler:
       self.ball_internal.velocity = self.ball_internal.velocity + self.ball_internal.spin
-      self.ball_internal.spin = self.ball_internal.spin * spin_degen
+      self.ball_internal.spin = self.ball_internal.spin * self.spin_degen
     self.ball_internal.loc = self.ball_internal.loc + self.ball_internal.velocity * delta_time
-    self.ball_internal.velocity = self.ball_internal.velocity * ball_friction_factor
+    self.ball_internal.velocity = self.ball_internal.velocity * self.ball_friction_factor
     self.draw(key_points)
     blue_reward, transition = self.get_reward()
     if transition:
@@ -369,30 +412,30 @@ class PYsim:
       
   def get_state(self):
     '''
-    inject noise into ball_internal, and robot_internal states and update external objects
+    brief: inject noise into ball_internal, and robot_internal states and update external objects
+    returns: state_blue - state vector for blue team
+             state_yellow - state vector for yellow team
     '''
-    translation_noise = 0
-    rotation_noise = 0
-    vanish_prob = 0
+    
     state_blue = []
     state_yellow = []
     state_blue[0:4] = state_yellow[0:4]
     state_blue[4:10+6*self.max_bots_per_team] = state_yellow[10+6*self.max_bots_per_team:]
     state_blue[10+6*self.max_bots_per_team:10+12*self.max_bots_per_team] = state_yellow[4:10+6*self.max_bots_per_team]
     
-    self.ball.update(self.ball_internal.loc + np.random.normal(size = [2]) * translation_noise, np.random.randint(2))
+    self.ball.update(self.ball_internal.loc + np.random.normal(size = [2]) * self.translation_noise, np.random.randint(2))
     i = 0
     for BRobot in self.blue_robots:
-      BRobot.update(self.blue_robots_internal[i].loc + np.random.normal(size = [2]) * translation_noise, 
-        self.blue_robots_internal[i].rot + np.random.normal() * rotation_noise,
-        np.random.choice([0,1], p = [vanish_prob, 1 - vanish_prob]))
+      BRobot.update(self.blue_robots_internal[i].loc + np.random.normal(size = [2]) * self.translation_noise, 
+        self.blue_robots_internal[i].rot + np.random.normal() * self.rotation_noise,
+        np.random.choice([0,1], p = [self.vanish_prob, 1 - self.vanish_prob]))
       i += 1
     
     i = 0
     for YRobot in self.yellow_robots:
-      YRobot.update(self.yellow_robots_internal[i].loc + np.random.normal(size = [2]) * translation_noise, 
-        self.yellow_robots_internal[i].rot + np.random.normal() * rotation_noise, 
-        np.random.choice([0,1], p = [vanish_prob, 1 - vanish_prob]))
+      YRobot.update(self.yellow_robots_internal[i].loc + np.random.normal(size = [2]) * self.translation_noise, 
+        self.yellow_robots_internal[i].rot + np.random.normal() * self.rotation_noise, 
+        np.random.choice([0,1], p = [self.vanish_prob, 1 - self.vanish_prob]))
       i += 1
     self.ball.controler = self.ball_internal.controler
     
@@ -416,66 +459,3 @@ class PYsim:
       state_yellow.append(BRobot.rot)
     
     return state_blue, state_yellow
-    
-'''
-test action
-'''
-class keyboard_control(action):
-  def __init__(self):
-    action.__init__(self)
-    self.norm_vel = 0
-    self.tang_vel = 0
-    self.rot_vel = 0
-    self.kick = 0
-    self.speed = 65
-    self.rot_speed = 4
-  def keypress_update(self, keys):
-    self.norm_vel = 0
-    self.tang_vel = 0
-    self.rot_vel = 0
-    self.kick = 0
-    if keys[K_SPACE]:
-      self.kick = 1
-    if keys[K_d]:
-      self.norm_vel = -self.speed
-    elif keys[K_a]:
-      self.norm_vel = self.speed
-    if keys[K_w]:
-      self.tang_vel = self.speed
-    elif keys[K_s]:
-      self.tang_vel = -self.speed
-    if keys[K_q]:
-      self.rot_vel = self.rot_speed
-    elif keys[K_e]:
-      self.rot_vel = -self.rot_speed
-  def run(self):
-    action = [self.kick,0,self.norm_vel, self.tang_vel, self.rot_vel]
-    self.action = action
-    return action
-    
-    
-#simple test code 
-if __name__ == "__main__":
-  max_bots_per_team = 6
-  game = PYsim(max_bots_per_team)
-  key_action = keyboard_control()
-  clock = pygame.time.Clock()
-  clock.tick(60)
-  ttime = clock.tick()
-  
-  for b in range(len(game.yellow_robots)):
-    game.add_action(key_action, b, is_blue = True)
-  while 1:
-    for event in pygame.event.get():
-      if event.type == QUIT:
-        pygame.quit()
-        sys.exit()
-      if event.type == KEYDOWN or event.type == KEYUP:
-        keys = pygame.key.get_pressed()
-        key_action.keypress_update(keys)
-    new_time = clock.tick()
-    #visualization test
-    #game.step(key_points = [([0,1000],10), ([0,-1000],-10)])
-    game.step()
-    ttime = new_time
-    

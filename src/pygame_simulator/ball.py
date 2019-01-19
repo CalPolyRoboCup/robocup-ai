@@ -1,3 +1,5 @@
+import numpy as np
+
 class ball:
   def __init__(self):
     self.loc = np.array([0,0], dtype = np.float64)
