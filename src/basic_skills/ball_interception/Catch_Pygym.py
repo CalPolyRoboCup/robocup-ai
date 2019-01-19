@@ -22,7 +22,7 @@ class Ball_Intercept_PYGym (PYsim):
     #self.blue_robots[0].rot = np.random.uniform(-math.pi, math.pi)
     random_offset = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
     self.ball.loc = random_offset
-    random_offset = np.random.uniform(-1, 1, size = [2])*np.array([1000, 1000])
+    random_offset = np.random.uniform(-1, 1, size = [2])*np.array([500, 500])  # [1000,1000]
     target_loc = self.blue_robots[0].loc + random_offset
     speed = np.random.uniform(100,800)
     self.ball.velocity = (target_loc - self.ball.loc)
