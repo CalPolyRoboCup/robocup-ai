@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 #replace this with your path to robocup-ai
 sys.path.insert(0, '..')
 from basic_skills.robot import *
@@ -38,28 +39,6 @@ from pygame.locals import *
 pygame.init()
 
 default_formation = [[-1000,0],[-2000, 500], [-2000, -500], [-3000, 1000], [-3000, -1000], [-4500, 0]]
-
-class ball:
-  def __init__(self):
-    self.loc = np.array([0,0], dtype = np.float64)
-    self.observed = 0
-    self.velocity = np.array([0,0], dtype = np.float64)
-    
-    self.smoothing = 0
-    self.first = True
-    self.last_timestamp = 0
-    self.spin = np.array([0,0], dtype = np.float64)
-    self.controler = False
-    self.last_controler = False
-  def update(self, nloc, obs, time_elapsed = 1.0/60, time_stamp = None):
-    self.observed = obs
-    if (((time_stamp == None) or (time_stamp != self.last_timestamp)) and 
-        obs and np.abs(nloc[0]) < 6000 and np.abs(nloc[1]) < 4000):    
-      self.last_timestamp = time_stamp
-      self.velocity = (self.velocity * self.smoothing + 
-        (1-self.smoothing) * (nloc - self.loc)/time_elapsed)
-      self.loc = ((self.loc + self.velocity*time_elapsed) * self.smoothing + 
-        (1-self.smoothing) * (nloc))
     
 class PYsim:
   def __init__(self, max_bots_per_team, starting_formation = default_formation):
@@ -107,6 +86,9 @@ class PYsim:
     self.reset()
     
   def reset(self):
+    '''
+      brief: place all robots in starting fomation and the ball in the center
+    '''
     for i in range(self.max_bots_per_team):
       self.blue_robots_internal[i].loc = np.array(self.starting_formation[i])
       self.blue_robots_internal[i].rot = 0
@@ -116,10 +98,23 @@ class PYsim:
       self.yellow_robots_internal[i].velocity = np.array([0,0])
     self.ball_internal.loc = np.array([0,0])
     self.ball_internal.velocity = np.array([0,0])
+    
   def convert_to_field_position(self, loc):
+    '''
+    brief - convert a screen pos to a field location
+    param - loc: a screen position
+    return - a field location
+    '''
     return self.field_upper_left + loc * self.field_dims / self.screen_res
+    
   def convert_to_screen_position(self, loc, dims = [0,0]):
+    '''
+    brief - convert a screen pos to a field location
+    param - loc: a screen position
+    return - a field location
+    '''
     return (loc - self.field_upper_left)*self.screen_res/self.field_dims - np.array(dims)/2
+    
   def draw(self, key_points = []):
     #self.screen.fill((150,150,150))
     '''
@@ -153,8 +148,10 @@ class PYsim:
         kp = self.convert_to_screen_position(np.array(kp))
         pygame.draw.circle(self.screen, (155,155,0), (int(kp[0]), int(kp[1])), int(ball_radius*self.screen_res[0]/self.field_dims[0])*4)
     pygame.display.update()
+    
   def update_bot(self, robot, delta_time):
     
+    stime = time.time()
     #kicker refactory period
     KICK_CD = 180
     
@@ -220,7 +217,7 @@ class PYsim:
     if robot.kick_cooldown > 0:
       robot.kick_cooldown -= 1
     if action[0] and robot.kick_cooldown == 0:
-      print("kick")
+      #print("kick")
       robot.kick_cooldown = KICK_CD
       #print(robot_local_ball_loc[0] > 0, robot_local_ball_loc[0] < robot_radius + kick_length + ball_radius, abs(robot_local_ball_loc[1]) > kick_width/2)
       if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < robot_radius + kick_length + ball_radius
@@ -247,7 +244,10 @@ class PYsim:
     
     robot.loc = robot.loc + robot.velocity * delta_time
     robot.rot = robot.rot + robot.rot_vel * delta_time
+    # if time.time() - stime > .04:
+      # print("taking too long", robot.id, time.time() - stime)
     return 0
+    
   def do_collision(self, delta_time):
     ball_mass = 1
     
@@ -292,6 +292,7 @@ class PYsim:
           self.ball_internal.velocity = self.ball_internal.velocity + push_out_vector / delta_time / ball_mass + bounce_velocity
           self.ball_internal.loc = self.ball_internal.loc + push_out_vector
       i += 1
+      
   def get_reward(self):
     '''
     checks for out of bounds and goals
@@ -320,6 +321,7 @@ class PYsim:
           reward = 5
         return reward, True
     return self.ball_internal.loc[0]/1000, False
+    
   def step(self, delta_time = .01666666, key_points = []):
     #how quickly the ball looses spin
     spin_degen = .75
@@ -352,8 +354,10 @@ class PYsim:
     if transition:
       self.reset()
     return state, blue_reward, transition
+    
   def push_state(self):
     pass
+    
   def add_action(self, action, index, is_blue):
     #print("add act", action, index, is_blue)
     if is_blue:
@@ -362,6 +366,7 @@ class PYsim:
     else:
       self.yellow_robots_internal[index].add_action(action)
       self.yellow_robots[index].add_action(action)
+      
   def get_state(self):
     '''
     inject noise into ball_internal, and robot_internal states and update external objects
