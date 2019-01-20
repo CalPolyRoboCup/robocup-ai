@@ -1,10 +1,3 @@
-/*
- * sim_spi_service.h
- * Copyright (C) 2018 willdle <willdle@willdle-ThinkPad-X1-Carbon>
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef SIM_SPI_SERVICE_H
 #define SIM_SPI_SERVICE_H
 #include <random>
@@ -31,6 +24,7 @@ private:
   std::default_random_engine generator;
   int sock;
   struct sockaddr_in addr;
+
   /**
    * @brief sends SPI commands to STM board to actuators
    * @param req a command from the main CPU

@@ -7,5 +7,4 @@
  
   <!-- Load the controllers -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/robocup_control" args="joint_state_controller drive_controller"/>
-  </launch>
-<!-- add parameter switch to turning the dummy service on or the real service on -->
+</launch>

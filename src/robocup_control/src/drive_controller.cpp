@@ -13,8 +13,11 @@ bool DriveController::init(hardware_interface::VelocityJointInterface* hw, ros::
 {
   ROS_INFO("Initializing drive controller");
   double pub_rate = 0.0f;
+  
+  // effectively a constant
   double pi = 3.14159265;
   n.getParam("/robocup_control/drive_controller/joints", joint_names);
+  
   // get publish rate here
   n.getParam("/robocup_control/joint_state_controller/publish_rate", pub_rate);
   update_rate = 1 / pub_rate;
@@ -33,9 +36,9 @@ bool DriveController::init(hardware_interface::VelocityJointInterface* hw, ros::
     drive_motors[i] = hw->getHandle(joint_names[i]);
   }
 
-  // subcribing to pose commands
+  // subcribing to speed commands
   // will only be switched on for simulation
-  pose_sub = n.subscribe("/robocup_control/command_pose", 1, &DriveController::handleDriveCommand, this);
+  speed_sub = n.subscribe("/robocup_control/command_speeds", 1, &DriveController::handleDriveCommand, this);
 
   return true;
 }
@@ -69,11 +72,11 @@ void DriveController::stopping(const ros::Time& time)
   }
 }
 
-void DriveController::handleDriveCommand(const geometry_msgs::Pose pose)
+void DriveController::handleDriveCommand(const geometry_msgs::Twist speed)
 {
-  this->x = pose.position.x;
-  this->y = pose.position.y;
-  this->angle = pose.position.z;
+  this->x = speed.linear.x;
+  this->y = speed.linear.y;
+  this->angle = speed.angular.z;
 }
 }
 PLUGINLIB_EXPORT_CLASS(robocup_control::DriveController, controller_interface::ControllerBase)

@@ -1,16 +1,9 @@
-/*
- * drive_controller.h
- * Copyright (C) 2018 willdle <willdle@willdle-ThinkPad-X1-Carbon>
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef DRIVE_CONTROLLER_H
 #define DRIVE_CONTROLLER_H
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Twist.h>
 #include <ros/ros.h>
 
 namespace robocup_control
@@ -56,9 +49,10 @@ private:
   std::vector<double> motor_angles;
   std::vector<std::string> joint_names;
   int num_joints;
-  ros::Subscriber pose_sub;
+  ros::Subscriber speed_sub;
+  
   // subscriber call back for new commanded x, y, theta velocities
-  void handleDriveCommand(const geometry_msgs::Pose pose);
+  void handleDriveCommand(const geometry_msgs::Twist twist);
 };
 }
 #endif /* !DRIVE_CONTROLLER_H */

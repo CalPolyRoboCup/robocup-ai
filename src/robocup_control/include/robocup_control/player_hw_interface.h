@@ -1,10 +1,3 @@
-/*
- * player_hw_interface.h
- * Copyright (C) 2018 willdle <willdle@willdle-ThinkPad-X1-Carbon>
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef PLAYER_HW_INTERFACE_H
 #define PLAYER_HW_INTERFACE_H
 #include <hardware_interface/joint_state_interface.h>
@@ -16,7 +9,6 @@
 /**
  * @brief Hardware interface for RoboCup robots
  */
-
 namespace robocup_control
 {
 class PlayerHWInterface : public hardware_interface::RobotHW

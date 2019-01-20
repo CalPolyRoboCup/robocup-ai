@@ -1,8 +1,4 @@
 /*
- * command_service.cpp
- * Copyright (C) 2018 willdle <willdle@willdle-ThinkPad-X1-Carbon>
- *
- * Distributed under terms of the MIT license.
  * #include <random>
  * #include <robocup_control/Insn.h>
  * #include <robocup_control/Data.h>
@@ -18,8 +14,9 @@ SimSpiService::SimSpiService(ros::NodeHandle n)
 {
   command_srv = n.advertiseService("player_insns", &SimSpiService::respondToCommand, this);
   data_srv = n.advertiseService("player_data", &SimSpiService::sendData, this);
-  // last_vel.resize(4);
+  
   curr_vel.resize(4);
+  
   // create socket
   sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sock < 0)
@@ -32,11 +29,7 @@ SimSpiService::SimSpiService(ros::NodeHandle n)
   addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 }
 
-SimSpiService::~SimSpiService()
-{
-  // sock.close();
-  // delete sock;
-}
+SimSpiService::~SimSpiService(){}
 
 bool SimSpiService::writeToSpi(robocup_control::Insn::Request& req)
 {
@@ -51,6 +44,7 @@ bool SimSpiService::writeToSpi(robocup_control::Insn::Request& req)
   curr_vel[1] = req.motor2;
   curr_vel[2] = req.motor3;
   curr_vel[3] = req.motor4;
+  
   // form grSim pkt
   cmd->set_id(req.robot);
   cmd->set_wheelsspeed(true);
@@ -79,6 +73,7 @@ bool SimSpiService::writeToSpi(robocup_control::Insn::Request& req)
   }
 
   pkt.SerializeToArray(msg, size);
+  
   // send grSim pkt
   err = sendto(sock, msg, size, 0, (struct sockaddr*)&addr, sizeof(addr));
   if (err < 0)
@@ -100,25 +95,19 @@ bool SimSpiService::readFromSpi(robocup_control::Data::Response& resp)
     mean = distribution(generator);
     means[i] = mean;
   }
-  ROS_INFO("Encoder readings: %lf, %lf, %lf, %lf", means[0], means[1], means[2], means[3]);
   resp.encoder1 = means[0];
   resp.encoder2 = means[1];
   resp.encoder3 = means[2];
   resp.encoder4 = means[3];
   resp.kicker_ready = false;
   resp.dribble_plz = false;
-  // last_vel = curr_vel;
   return true;
 }
 
 bool SimSpiService::respondToCommand(robocup_control::Insn::Request& req, robocup_control::Insn::Response& resp)
 {
-  // ROS_INFO("Responding to command");
   if (writeToSpi(req))
   {
-    // ROS_INFO("Successfully wrote stuff\n");
-    // ROS_INFO("Data:\n Speed 1: %lf\nSpeed 2: %lf\nSpeed 3: %lf\nSpeed 4: %lf\nKick: %lf\nDribble: %lf\n",
-    // req.motor1, req.motor2, req.motor3, req.motor4, req.kick, req.dribble);
     return true;
   }
   return false;
@@ -126,11 +115,8 @@ bool SimSpiService::respondToCommand(robocup_control::Insn::Request& req, robocu
 
 bool SimSpiService::sendData(robocup_control::Data::Request& req, robocup_control::Data::Response& resp)
 {
-  // ROS_INFO("Sending data");
   if (readFromSpi(resp))
   {
-    // ROS_INFO("Successfully read from SPI\n");
-    // ROS_INFO("Data: %d\n", req.plz);
     return true;
   }
   return false;

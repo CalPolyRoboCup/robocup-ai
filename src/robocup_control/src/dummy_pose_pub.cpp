@@ -1,27 +1,20 @@
-/*
- * dummy_pose_pub.cpp
- * Copyright (C) 2018 willdle <willdle@willdle-ThinkPad-X1-Carbon>
- *
- * Distributed under terms of the MIT license.
- */
-
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Twist.h>
 #include <ros/ros.h>
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "dummy_pose");
+  ros::init(argc, argv, "dummy_speed");
   ros::NodeHandle n;
-  ros::Publisher pose_pub = n.advertise<geometry_msgs::Pose>("command_pose", 1000);
+  ros::Publisher speed_pub = n.advertise<geometry_msgs::Twist>("command_speed", 1000);
   ros::Rate loop_rate(60);
   while (ros::ok())
   {
-    geometry_msgs::Pose pose;
-    pose.position.x = 0.0;
-    pose.position.y = 1.0;
-    pose.position.z = 0.0;
-    ROS_INFO("Sending new pose: x = %f, y = %f, theta= %f", pose.position.x, pose.position.y, pose.position.z);
-    pose_pub.publish(pose);
+    geometry_msgs::Twist twist;
+    twist.linear.x = 0.0;
+    twist.linear.y = 1.0;
+    twist.angular.z = 0.0;
+    ROS_INFO("Sending new twist: x = %f, y = %f, theta= %f", twist.linear.x, twist.linear.y, twist.angular.z);
+    speed_pub.publish(twist);
     ros::spinOnce();
     loop_rate.sleep();
   }

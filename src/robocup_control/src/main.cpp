@@ -1,10 +1,3 @@
-/*
- * player_controller_async.cpp
- * Copyright (C) 2018 willdle <willdle@willdle-ThinkPad-X1-Carbon>
- *
- * Distributed under terms of the MIT license.
- */
-
 #include <robocup_control/player_hw_interface.h>
 #include <robocup_control/player_control_loop.h>
 #include <controller_manager/controller_manager.h>

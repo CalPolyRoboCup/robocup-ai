@@ -1,10 +1,3 @@
-/*
- * player_control_loop.h
- * Copyright (C) 2018 willdle <willdle@willdle-ThinkPad-X1-Carbon>
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef PLAYER_CONTROL_LOOP_H
 #define PLAYER_CONTROL_LOOP_H
 
