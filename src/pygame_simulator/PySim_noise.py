@@ -57,7 +57,7 @@ class PYsim:
     self.field_dims = np.array([12000,9000])
     self.goal_height = 1500
 
-    self.font = pygame.font.SysFont("Impact", 55)
+    #self.font = pygame.font.SysFont("Impact", 55)
     self.screen = pygame.display.set_mode(self.screen_res, pygame.HWSURFACE, 32)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "../resources/Field.png")
@@ -266,7 +266,7 @@ class PYsim:
     limit max speed
     '''
     if np.linalg.norm(robot.velocity) > self.max_speed:
-      robot.velocity = robot.velocity * max_speed/np.linalg.norm(robot.velocity)
+      robot.velocity = robot.velocity * self.max_speed/np.linalg.norm(robot.velocity)
     if robot.rot_vel > self.max_angular_speed:
       robot.rot_vel = self.max_angular_speed
     if robot.rot_vel < -self.max_angular_speed:
