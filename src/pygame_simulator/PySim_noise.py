@@ -381,7 +381,19 @@ class PYsim:
     self.ball_internal.loc = self.ball_internal.loc + self.ball_internal.velocity * delta_time
     self.ball_internal.velocity = self.ball_internal.velocity * self.ball_friction_factor
     
-  def step(self, delta_time = .01666666, key_points = []):
+  def step(self, delta_time = .01666666, visualize = True, key_points = []):
+    '''
+    brief: Advance the state of the game
+    params: delta_time - time since last tick. Defaults to 1/60
+            visualize - Whether the game should be drawn
+            key_points - points to display on field. Either in the form [(x,y)] or [((x,y), size]. 
+                          If size is negative the points are drawn in a different color. Ignored if visualize == False
+    returns: state - (Bstate, Ystate) Bstate and Ystate are the state vectors of game for blue and yellow teams respectively
+                      . Useful for ML down the road
+             blue_reward - reward for the blue team. Invert for Yellow team.
+             transition - Whether a state change has occurred. True when goal scored, or foul committed.
+             
+    '''
     state = self.get_state()
     self.ball_internal.controler = False
     
@@ -401,10 +413,18 @@ class PYsim:
     return state, blue_reward, transition
     
   def push_state(self):
+    '''
+    brief: Needed to match GRsim API
+    '''
     pass
     
   def add_action(self, action, index, is_blue):
-    #print("add act", action, index, is_blue)
+    '''
+    brief: use this method to add actions to robots so that internal and external objects are kept up to date
+    params: action - action to add
+            index - the index of the bot to add action to
+            is_blue - whether the bot to add action to is on the blue team
+    '''
     if is_blue:
       self.blue_robots_internal[index].add_action(action)
       self.blue_robots[index].add_action(action)
@@ -461,3 +481,67 @@ class PYsim:
       state_yellow.append(BRobot.rot)
     
     return state_blue, state_yellow
+    
+  def run(self, blue_strategy = None, yellow_strategy = None, framerate = 60, key_points = []):
+    '''
+    brief: runs game test environment. NOTE: this is not final
+    params: blue_strategy - a strategy to choose actions for blue robots. Must have an update method
+            yellow_strategy - a strategy to choose actions for yellow robots. Must have an update method
+            framerate - the frame rate to run the game at. If None the game is not visualized and is run as fast as possible.
+    '''
+    
+    
+    if framerate != None:
+      clock = pygame.time.Clock()
+      clock.tick(framerate)
+      
+    while(1):
+      if blue_strategy != None:
+        blue_strategy.update()
+      if yellow_strategy != None:
+        yellow_strategy.update()
+        
+        
+      for event in pygame.event.get():
+        if event.type == QUIT:
+          pygame.quit()
+          sys.exit()
+          
+        '''
+        Current Get_Open Test Environment controls
+        if event.type == MOUSEBUTTONDOWN:
+          pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
+          #left mouse button
+          if pressed1:
+            print("high")
+            game.yellow_robots_internal[1].loc = game.convert_to_field_position(pygame.mouse.get_pos())
+          #right mouse button
+          if pressed3:
+            print("hiiii")
+            game.yellow_robots_internal[0].loc = game.convert_to_field_position(pygame.mouse.get_pos())
+        '''
+            
+            
+        '''
+        Current Goalie Test Environment controls
+        if event.type == MOUSEBUTTONDOWN:
+          pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
+          if pressed1:
+            game.ball_internal.loc = game.convert_to_field_position(pygame.mouse.get_pos())
+            game.ball_internal.velocity = np.array([0,0])
+          if pressed3:
+            game.ball_internal.velocity = (game.convert_to_field_position(pygame.mouse.get_pos()) - game.ball_internal.loc)
+        '''
+            
+        if event.type == KEYDOWN or event.type == KEYUP:
+          keys = pygame.key.get_pressed()
+          #press r-key to reset
+          if keys[K_r]:
+            game.reset()
+      if framerate != None:
+        new_time = clock.tick()
+        game.step(new_time - ttime, key_points = key_points)
+        ttime = new_time
+      else:
+        game.step(visualize = False)
+        
