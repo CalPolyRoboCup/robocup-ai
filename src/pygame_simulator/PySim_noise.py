@@ -312,19 +312,20 @@ class PYsim:
         self.ball_internal.loc = self.ball_internal.loc + push_out_vector
     return ball_held
     
-  def do_robot_collision(self, r, robots, delta_time):
+  def do_robot_collision(self, r, o, delta_time):
     '''
     brief: handle collisions with other robots
     params: r - robot to run collision on
+            o - other robot to run collision on
+            delta_time - time step
     '''
-    for o in robots:
-      distance = np.linalg.norm(r.loc - o.loc)
-      if distance < 2 * self.robot_radius:
-        push_out_vector = (r.loc - o.loc) * (distance - 2*self.robot_radius)/(distance * 2)
-        r.loc = r.loc - push_out_vector
-        r.velocity = r.velocity - push_out_vector / delta_time
-        o.loc = o.loc + push_out_vector
-        o.velocity = o.velocity + push_out_vector / delta_time
+    distance = np.linalg.norm(r.loc - o.loc)
+    if distance < 2 * self.robot_radius:
+      push_out_vector = (r.loc - o.loc) * (distance - 2*self.robot_radius)/(distance * 2)
+      r.loc = r.loc - push_out_vector
+      r.velocity = r.velocity - push_out_vector / delta_time
+      o.loc = o.loc + push_out_vector
+      o.velocity = o.velocity + push_out_vector / delta_time
     
   def do_collision(self, delta_time):
     '''
@@ -335,9 +336,12 @@ class PYsim:
     robots.extend(self.blue_robots_internal)
     robots.extend(self.yellow_robots_internal)
     ball_held = False
+    
+    ind = 0
     for r in robots:
-      robots.remove(r)
-      self.do_robot_collision(r, robots, delta_time)
+      ind += 1
+      for o in robots[ind:]:
+        self.do_robot_collision(r, o, delta_time)
       ball_held = self.do_ball_collision(r, ball_held, delta_time)
       
   def get_reward(self):
