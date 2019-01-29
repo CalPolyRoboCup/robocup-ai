@@ -1,8 +1,7 @@
 import sys
 #replace this with your path to robocup-ai
 sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
-from pygame_simulator.PySim import *
-from basic_skills.ball_interception.Ball_Interception import *
+from basic_skills.ball_interception.Ball_Interception2 import *
 from basic_skills.ball_interception.Catch_Pygym import *
 
 if __name__ == "__main__":
@@ -12,7 +11,7 @@ if __name__ == "__main__":
   clock = pygame.time.Clock()
   clock.tick(60)
   ttime = clock.tick()
-  game.yellow_robots[0].add_action(intercept_action)
+  game.add_action(intercept_action, 0, False)
   while 1:
     for event in pygame.event.get():
       if event.type == QUIT:

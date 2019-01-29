@@ -5,7 +5,10 @@ from basic_skills.action import *
 from basic_skills.move_to.move_to import move_to
 from pygame_simulator.PySim_noise import *
 
-class goalie(action):
+ 
+
+
+class Goalie(action):
   # Covers a pass from target_ball to target_loc
   # for goalie
   # identical to cover with "lead_target_robot" False
@@ -14,20 +17,35 @@ class goalie(action):
     self.goal = np.array([0,0])
     self.pid = move_to()
     self.orbit = 1500
+    
   def add(self, robot, game):
     action.add(self, robot, game)
     move_to.add(self.pid, robot, game)
     if self.robot.is_blue:
-      self.goal = np.array([-6500,0])
+      self.goal = np.array([-6000,0])
     else:
-      self.goal = np.array([6500,0])
+      self.goal = np.array([6000,0])
+      
+  def push_out_function(self, dist):
+    '''
+    brief: we want to move forward to intercept the ball and cover more of the goal.
+            This bit of math squashes the distance from the ball to the goal so that 
+            if the ball is close to the goal a large number is returned. Otherwise a
+    params: dist - distance from ball to goal 
+    returns: value - squashed value as described above.
+    '''
+    #small number.
+    return 1500000/(100 + dist)
+  
   def run(self):
-    adjustment = 2500000/(100 + np.linalg.norm(self.game.ball.loc - self.goal))
+  
+    adjustment = self.push_out_function(np.linalg.norm(self.game.ball.loc - self.goal))
     
     #recoil to buy time and absorb shock if the ball is free
     # if self.game.ball.controler == False:
       # adjustment = -adjustment
       
+    #we will position ourselves between the ball and the goal 
     push_out_distance = self.orbit + adjustment
     push_vec = self.game.ball.loc - self.goal
     
@@ -46,30 +64,4 @@ class goalie(action):
     self.move_to = move_to
     return actions
     
-    
-if __name__ == "__main__":
-  game = PYsim(6)
-  goalie_action = goalie()
-  game.add_action(goalie_action, 0, True)
-  i = 0
-  
-  clock = pygame.time.Clock()
-  clock.tick(60)
-  ttime = clock.tick()
-  while 1:
-    for event in pygame.event.get():
-      if event.type == QUIT:
-        pygame.quit()
-        sys.exit()
-        
-      
-      if event.type == MOUSEBUTTONDOWN:
-        pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
-        if pressed1:
-          game.ball_internal.loc = game.convert_to_field_position(pygame.mouse.get_pos())
-          game.ball_internal.velocity = np.array([0,0])
-        if pressed3:
-          game.ball_internal.velocity = (game.convert_to_field_position(pygame.mouse.get_pos()) - game.ball_internal.loc)
-    new_time = clock.tick()
-    game.step()
-    ttime = new_time
+   
