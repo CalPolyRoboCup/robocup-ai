@@ -1,9 +1,11 @@
 import sys
-#replace this with your path to robocup-ai
 sys.path.insert(0, '../..')
 from basic_skills.orbit_ball.orbit_ball import *
 from pygame_simulator.PySim_noise import *
 
+'''
+yellow robot moves back and forth while the blue robot orbits the ball to look at the yellow robot
+'''
 if __name__ == "__main__":
   game = PYsim(6)
   orbit_action = orbit_ball(np.array([0,3000]))

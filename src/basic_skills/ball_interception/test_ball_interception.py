@@ -1,5 +1,4 @@
 import sys
-#replace this with your path to robocup-ai
 sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
 from basic_skills.ball_interception.Ball_Interception2 import *
 from basic_skills.ball_interception.Catch_Pygym import *
@@ -12,8 +11,8 @@ if __name__ == "__main__":
   clock.tick(60)
   ttime = clock.tick()
   game.add_action(intercept_action, 0, False)
-  while 1:
     for event in pygame.event.get():
+  while 1:
       if event.type == QUIT:
         pygame.quit()
         sys.exit()

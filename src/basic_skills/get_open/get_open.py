@@ -1,7 +1,6 @@
 import numpy as np
 import math
 import sys
-#replace this with your path to robocup-ai
 sys.path.insert(0, '../..')
 from basic_skills.helper_functions import *
 from basic_skills.action import *
@@ -87,7 +86,8 @@ class get_open(action):
     samples - number of points to consider when repositioning
     sample_points - the points to consider when repositioning
     speed_mod - increases the speed of the robot. Can also cause oscillations
-    depth_weight - smaller values stay farther from enemy robots. Not sure how to describe this without references to the code.
+    depth_weight - smaller values stay farther from enemy robots. Not sure how to describe this without 
+                    references to the code. See rate_point function and calculations of the improvement to the point.
     '''
     self.stand_off_distance = 750
     self.freakout_weight = 140
@@ -96,14 +96,14 @@ class get_open(action):
     self.speed_mod = 2
     self.depth_weight = .015
     
-    #for debugging. Keypoints to plot with pygame.step
+    # for debugging. Keypoints to plot with pygame.step
     self.prints = [(np.array([0,0]), 1), (np.array([0,0]), 1)]#, np.array([0,0]), np.array([0,0]), np.array([0,0]), np.array([0,0]), np.array([0,0])]
     
-    #when we reposition we also call it darting
+    # when we reposition we also call it darting
     self.dart = False
     self.dart_to = None
     
-    #score representing how well this robot can make passes to points
+    # score representing how well this robot can make passes to points
     self.current_score = 0
     self.lag_loc = np.array([0,0])
 
@@ -148,8 +148,8 @@ class get_open(action):
       improvements = improvements + improvement_field * importance * self.weights[pind]
       improv_weight += importance * self.weights[pind]
       
-      #give score for good passes
-      #cap available score from a single pass so robots don't run back as much
+      # give score for good passes
+      # cap available score from a single pass so robots don't run back as much
       if worst > 500:
         worst = 500
       score += worst * self.weights[pind]
@@ -161,10 +161,10 @@ class get_open(action):
         
       pind += 1
     
-    #weighted average of improvements to passes to each point
+    # weighted average of improvements to passes to each point
     improvements = improvements/improv_weight
     
-    #don't stand too close to one of the points
+    # don't stand too close to one of the points
     for p in self.points:
       push_out = improvements - p
       push_out_mag = np.linalg.norm(push_out)
@@ -190,9 +190,6 @@ class get_open(action):
       
       for a in self.allies:
         score -= 50000/(100 + np.linalg.norm(a.loc - sample_point))
-        # if np.linalg.norm(a.loc - sample_point) < self.stand_off_distance*3 and self.robot.task == a.task:
-          # score -= 500
-      #print(score)
       if first or score > best:
         best = score
         best_point = sample_point
@@ -200,37 +197,24 @@ class get_open(action):
     return best_point, best
     
   def run(self):
-    #if we are too close to an allie dart
-    # if not self.dart and self.freakout_weight > 0:
-      # for a in self.allies:
-        # if (a.id != self.robot.id and a.task == self.robot.task and issubclass(type(a.action), get_open) and 
-            # a.action.dart == 0 and np.linalg.norm(a.loc - self.robot.loc) < self.stand_off_distance and 
-            # self.current_score <= a.action.current_score):
-          # self.dart = 120
-          # self.dart_to, score = self.get_better_loc()
-          # print("freak something touched me", self.robot.id, self.robot.loc, self.dart_to, score, self.current_score, a.action.current_score)
-          # break
-          
-    #while darting move to "better loc"
+    # while darting move to "better loc"
     if self.dart > 0:
       move_to = self.dart_to
       self.current_score = 0
       if self.pid.done() and self.dart != 120:
-        print("finished", self.robot.loc, self.robot.id)
         self.dart = 1
       self.dart -= 1
       
-    #if we aren't darting do the normal thing
+    # if we aren't darting do the normal thing
     if self.dart == 0:
     
-      #we calculate based on a lagging version of our location to prevent oscillations between two enemies
+      # we calculate based on a lagging version of our location to prevent oscillations between two enemies
       improvement, score = self.rate_point(self.lag_loc)
-      #if we aren't doing well
-      #dart
+      # if we aren't doing well
+      # dart
       if score < self.freakout_weight:
         self.dart = 120
         self.dart_to, score = self.get_better_loc()
-        #print("freak I'm scared", self.robot.id, self.robot.loc, self.dart_to, self.current_score, score)
       self.current_score = score
       move_to = self.robot.loc + self.speed_mod*(improvement - self.robot.loc)
     
@@ -254,9 +238,11 @@ class striker(get_open):
     self.allies = allies
     self.enemies = enemies
     get_open.__init__(self, [ball_controller.loc, goal], [1, 0.4], enemies, allies)
+    
   def add(self, robot, game):
     robot.task = 1
     get_open.add(self, robot, game)
+    
   def run(self):
     self.points[0] = self.ball_controller.loc
     return get_open.run(self)
@@ -271,9 +257,11 @@ class fielder(get_open):
     self.allies = allies
     self.enemies = enemies
     get_open.__init__(self, [ball_controller.loc, target_to_support.loc], [1, 0.7], enemies, allies)
+    
   def add(self, robot, game):
     robot.task = 2
     get_open.add(self, robot, game)
+    
   def run(self):
     self.points[1] = self.target_to_support.loc
     self.points[0] = self.ball_controller.loc
@@ -294,16 +282,21 @@ class get_open_with_ball(get_open):
     self.support_robots = support_robots
     self.pid = dribble_ball()
     
-    #change default movement calculation. 
-    #self.depth_weight = 0.025
+    # change default movement calculation. 
+    # Original description:
+    # depth_weight - smaller values stay farther from enemy robots. Not sure how to describe this without 
+    #                references to the code. See rate_point function and calculations of the improvement to the point.
+    self.depth_weight = 0.025
     
-    #do not dart because of bad positions. Darting causes us to drop the ball.
+    # do not dart because of bad positions. Darting causes us to drop the ball.
     self.freakout_weight = -10
+    
   def add(self, robot, game):
-    #setting the robot task is important so that dart doesn't trigger from being too close to a robot with the same task
-    #ideally we would remove all dart checking, but I think this wrapper is neater 
+    # setting the robot task is important so that dart doesn't trigger from being too close to a robot with the same task
+    # ideally we would remove all dart checking, but I think this wrapper is neater 
     robot.task = 3
     get_open.add(self, robot, game)
+    
   def run(self):
     for i in range(len(self.support_robots)):
       self.points[i] = self.support_robots[i].loc
