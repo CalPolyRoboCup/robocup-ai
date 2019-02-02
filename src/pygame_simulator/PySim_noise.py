@@ -37,8 +37,32 @@ import pygame
 from pygame.locals import *
 
 pygame.init()
+default_formation = [[-1000,0],[-2000, 500], [-2000, -500], [-3000, 1000], [-3000, -1000], [-4500, 0]] #robot locations at restart (x,y)
 
-default_formation = [[-1000,0],[-2000, 500], [-2000, -500], [-3000, 1000], [-3000, -1000], [-4500, 0]]
+class ball:
+  def __init__(self):
+    self.loc = np.array([0,0], dtype = np.float64)
+    self.observed = 0
+    self.velocity = np.array([0,0], dtype = np.float64)
+    self.smoothing = 0
+    self.first = True
+    self.last_timestamp = 0
+    self.spin = np.array([0,0], dtype = np.float64)
+    self.controler = False
+    self.last_controler = False
+    self.last_touch = None
+
+  def update(self, nloc, obs, time_elapsed = 1.0/60, time_stamp = None):
+    self.observed = obs
+    if (((time_stamp == None) or (time_stamp != self.last_timestamp)) and 
+        obs and np.abs(nloc[0]) < 6000 and np.abs(nloc[1]) < 4000):    
+      self.last_timestamp = time_stamp
+      self.velocity = (self.velocity * self.smoothing + 
+        (1-self.smoothing) * (nloc - self.loc)/time_elapsed)
+      self.loc = ((self.loc + self.velocity*time_elapsed) * self.smoothing + 
+        (1-self.smoothing) * (nloc))
+
+
     
 class PYsim:
   def __init__(self, max_bots_per_team, starting_formation = default_formation):
@@ -53,10 +77,10 @@ class PYsim:
 
     self.clock = pygame.time.Clock()
     self.last_tick = pygame.time.get_ticks()
-    self.screen_res = np.array([1040, 740])
-    self.field_upper_left = np.array([-6000, -4500])
-    self.field_dims = np.array([12000,9000])
-    self.goal_height = 1500
+    self.screen_res = np.array([1040, 740]) #pixels
+    self.field_upper_left = np.array([-5200, -3700]) #gamespace
+    self.field_dims = np.array([10400,7400])
+    self.goal_height = 1000
 
     self.font = pygame.font.SysFont("Impact", 55)
     self.screen = pygame.display.set_mode(self.screen_res, pygame.HWSURFACE, 32)
@@ -114,7 +138,7 @@ class PYsim:
     return - a field location
     '''
     return (loc - self.field_upper_left)*self.screen_res/self.field_dims - np.array(dims)/2
-    
+
   def draw(self, key_points = []):
     #self.screen.fill((150,150,150))
     '''
@@ -177,8 +201,6 @@ class PYsim:
     
     #how quickly the ball spins up (0 to 1 inclusive) larger is slower
     spin_accel_rate = .85
-    
-    
     
     #how fast the current robot velocity changes to the target velocity (0 to 1 inclusive) larger is slower
     accel_rate = .99
@@ -274,11 +296,12 @@ class PYsim:
           o.velocity = o.velocity + push_out_vector / delta_time
           
       '''
-      handle collisions with other balls
+      handle collisions with the ball
       '''
       ball_vector = self.ball_internal.loc - r.loc
       ball_distance = np.linalg.norm(ball_vector)
       if ball_distance < robot_radius + ball_radius:
+        self.ball_internal.last_touch = r.is_blue #True means blue last touched the ball, False means yellow last touched. Used for foul tracking
         push_out_vector = ball_vector * ((robot_radius + ball_radius) - ball_distance)/ball_distance
         bounce_velocity = drop_perpendicular(self.ball_internal.velocity, np.array([0,0]), ball_vector) * elasticity_factor
         '''
@@ -292,7 +315,7 @@ class PYsim:
           self.ball_internal.velocity = self.ball_internal.velocity + push_out_vector / delta_time / ball_mass + bounce_velocity
           self.ball_internal.loc = self.ball_internal.loc + push_out_vector
       i += 1
-      
+
   def get_reward(self):
     '''
     checks for out of bounds and goals
@@ -302,7 +325,7 @@ class PYsim:
     if self.ball_internal.last_controler != False:
       if (self.ball_internal.loc[0] > (self.field_dims + self.field_upper_left)[0] or self.ball_internal.loc[1] > (self.field_dims + self.field_upper_left)[1] or
         self.ball_internal.loc[0] < self.field_upper_left[0] or self.ball_internal.loc[1] < self.field_upper_left[1]):
-        if (abs(self.ball_internal.loc[1]) < self.goal_height/2):
+        if (abs(self.ball_internal.loc[1]) < self.goal_height/2): #ball went through the goal
           if self.ball_internal.last_controler.is_blue:
             #goal for yellow
             print("goal on blue")
@@ -311,24 +334,25 @@ class PYsim:
             #goal for blue
             print("goal on yellow")
             reward = 50
-        elif self.ball_internal.last_controler.is_blue:
-          #out of bounds on blue
-          print("out on blue")
-          reward = -5
-        else:
-          #out of bounds on yellow
-          print("out on yellow")
-          reward = 5
+        else: #foul, uses the last touched robot
+          if self.ball_internal.last_touch:
+            #out of bounds on blue
+            print("out on blue")
+            reward = -5
+          else:
+            #out of bounds on yellow
+            print("out on yellow")
+            reward = 5
         return reward, True
     return self.ball_internal.loc[0]/1000, False
-    
+
   def step(self, delta_time = .01666666, key_points = []):
     #how quickly the ball looses spin
     spin_degen = .75
     
     #how quickly the ball slows down when not controlled (larger slows down less)
     ball_friction_factor = .999
-    
+    #print("last touched = ", self.ball_internal.last_touch)
     state = self.get_state()
     self.ball_internal.controler = False
     
@@ -354,7 +378,7 @@ class PYsim:
     if transition:
       self.reset()
     return state, blue_reward, transition
-    
+
   def push_state(self):
     pass
     
@@ -427,7 +451,8 @@ class keyboard_control(action):
     self.tang_vel = 0
     self.rot_vel = 0
     self.kick = 0
-    self.speed = 65
+    self.speed = 65 #wasd speed
+    self.walk = 35 #for slow movement, ijkl
     self.rot_speed = 4
   def keypress_update(self, keys):
     self.norm_vel = 0
@@ -444,6 +469,14 @@ class keyboard_control(action):
       self.tang_vel = self.speed
     elif keys[K_s]:
       self.tang_vel = -self.speed
+    if keys[K_l]:
+      self.norm_vel = self.walk
+    elif keys[K_j]:
+      self.norm_vel = -self.walk
+    if keys[K_i]:
+      self.tang_vel = -self.walk
+    elif keys[K_k]:
+      self.tang_vel = self.walk
     if keys[K_q]:
       self.rot_vel = self.rot_speed
     elif keys[K_e]:
