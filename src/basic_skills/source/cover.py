@@ -12,7 +12,7 @@ class cover(action):
   # used to lead robots bassed on the time it would take them to swivel to face target_loc
   robot_rotation_speed = 4.25
   
-  #epsilon for small value comparisons
+  # epsilon for small value comparisons
   EPS = 0.001
   
   '''
@@ -20,8 +20,11 @@ class cover(action):
   '''
   def __init__(self, target_loc, target_robot, interpose_factor = .5, min_interpose_offset = 0, interpose_weight = 25, lead_target_robot = True):
     action.__init__(self)
+    
+    # this action generates calls to move_to to produce its actions
     self.pid = move_to()
     self.move_to = False
+    
     self.target_loc = target_loc
     self.target_robot = target_robot
     
@@ -42,6 +45,12 @@ class cover(action):
     self.interpose_weight = interpose_weight
     
   def add(self, robot, game):
+    '''
+    Add this action and its move_to action to the robot
+    Note that the move_to action (pid) is added first so only 
+    this action remains on the robot. The move_to action is
+    still updated with references to the robot and game though
+    '''
     self.robot = robot
     self.pid.add(robot, game)
     action.add(self, robot, game)
@@ -99,6 +108,8 @@ class cover_robots(action):
   '''
   def __init__(self, target_bot1, target_bot2, interpose_factor = .5, min_interpose_offset = 190, interpose_weight = 25, lead_target_robot = True):
     action.__init__(self)
+    
+    # this action generates calls to move_to to produce its actions
     self.pid = move_to()
     self.move_to = False
     self.target_bot1 = target_bot1
@@ -119,8 +130,14 @@ class cover_robots(action):
     self.interpose_weight = interpose_weight
     
   def add(self, robot, game):
+    '''
+    Add this action and its move_to action to the robot
+    Note that the move_to action (pid) is added first so only 
+    this action remains on the robot. The move_to action is
+    still updated with references to the robot and game though
+    '''
     self.robot = robot
-    self.pid.robot = robot
+    self.pid.add(robot, game)
     action.add(self, robot, game)
     
   def run(self):
