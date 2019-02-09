@@ -219,6 +219,8 @@ class PYsim:
     '''
     spinner stuff
     '''
+    
+    # if the ball is in a box in front of the robot apply spin
     ball_robot_vector = self.ball_internal.loc - robot.loc
     robot_local_ball_loc = convert_local(ball_robot_vector, -robot.rot)
     if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < self.robot_radius + self.spin_length + self.ball_radius
@@ -238,6 +240,9 @@ class PYsim:
             kick - True if this bot should kick the ball
             chip - Unused. Would indicate whether to chip the ball up and over
     '''
+    
+    # if kicker off cool down and the ball is in the kicking box in front of the robot
+    #   kick the ball
     ball_robot_vector = self.ball_internal.loc - robot.loc
     robot_local_ball_loc = convert_local(ball_robot_vector, -robot.rot)
     if robot.kick_cooldown > 0:
@@ -451,10 +456,16 @@ class PYsim:
     state_blue = []
     state_yellow = []
     
+    # copy states between yellow and blue state vectors
+    # ball info [0:4] is the same between both
+    # blue robot info is swapped with yellow robot info between the two states
+    # we assign the list slices to each other to copy pointers so that only yellow state must be filled 
+    # This allows for data reuse.
     state_blue[0:4] = state_yellow[0:4]
     state_blue[4:10+6*self.max_bots_per_team] = state_yellow[10+6*self.max_bots_per_team:]
     state_blue[10+6*self.max_bots_per_team:10+12*self.max_bots_per_team] = state_yellow[4:10+6*self.max_bots_per_team]
     
+    # call updates on balls and robots and inject noise to simulate hardware
     self.ball.update(self.ball_internal.loc + np.random.normal(size = [2]) * self.translation_noise, np.random.randint(2))
     i = 0
     for BRobot in self.blue_robots:
@@ -471,6 +482,7 @@ class PYsim:
       i += 1
     self.ball.controler = self.ball_internal.controler
     
+    # fill the yellow state vector with info. This data is copied to blue state vector as explained above
     state_yellow.append(self.ball.loc[0])
     state_yellow.append(self.ball.loc[1])
     state_yellow.append(self.ball.velocity[0])
