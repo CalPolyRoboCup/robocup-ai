@@ -1,9 +1,0 @@
-bool plz
----
-uint8 robot
-float64 encoder1
-float64 encoder2
-float64 encoder3
-float64 encoder4
-bool kicker_ready
-bool dribble_plz

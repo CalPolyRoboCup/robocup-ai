@@ -1,7 +1,0 @@
-<library path="lib/librobocup_control">
-  <class name="robocup_control/DriveController" type="robocup_control::DriveController" base_class_type="controller_interface::ControllerBase">
-    <description>
-      DriveController converts the velocity commands to commands for the drive motors.
-    </description>
-  </class>
-</library>
