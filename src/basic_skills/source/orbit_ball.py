@@ -1,89 +1,83 @@
 import numpy as np
 import math
 import sys
-#replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '../..')
 from basic_skills.action import *
 from basic_skills.move_to.move_to import *
 from basic_skills.helper_functions import *
 from matplotlib.widgets import Slider, Button, RadioButtons
 from pygame_simulator.PySim_noise import *
 
-robot_rotation_speed = 4.25
-
+'''
+moves around the ball so that it faces target_loc
+'''
 class orbit_ball(action):
-  #covers a pass from target_robot to target_loc
   def __init__(self, target_loc = False, offset = 125):
     action.__init__(self)
     self.pid = move_to()
     self.move_to = False
     self.target_loc = target_loc
-    self.spiral_factor = .35
-    self.speed_mod_factor = 7
+    
+    # how quickly the robot moves around the ball. Larger is slower
+    self.spiral_factor = 0.35
+    self.rot_spiral_factor = 0.625
+    
+    # if we are within speed_mod_distance of the ball push our target point out by
+    # speed_mod_factor so that we orbit faster.
+    self.speed_mod_factor = 15
+    self.speed_mod_distance = 300
+    
+    # we look a bit behind the ball so as we orbit we will still be looking at the ball
+    # this factor controls that
+    self.rot_lead_factor = .35
+    
+    # number of seconds to lead the ball by
+    self.extrapolation_factor = 0.1
+    
+    # how far from the ball we try to get
     self.offset = offset
+    
   def add(self, robot, game):
     self.robot = robot
-    self.pid.robot = robot
+    self.pid.add(robot, game)
     action.add(self, robot, game)
+    
   def run(self):
     '''
     we pull in to spiral_factor and rotate around by (1 - spiral_factor)
     we also push the target location out by speed_mod_factor if it is too close
-      so that we move faster
+      since the intermediate locations aren't where we want to stop
     '''
-    ball_extrapolation = self.game.ball.loc + self.game.ball.velocity/10
+    
+    # set target location to be closer to the ball
+    ball_extrapolation = self.game.ball.loc + self.game.ball.velocity * self.extrapolation_factor
     robot_vec = self.robot.loc - ball_extrapolation
-    #print(self.robot.loc, ball_extrapolation)
     robot_vec_scaled = robot_vec * self.offset / np.linalg.norm(robot_vec)
     target_loc = robot_vec_scaled * (1 - self.spiral_factor) + self.spiral_factor * robot_vec
     
+    # get the angle between where we are relative to the ball and where we would like to be
     target_vec = ball_extrapolation - self.target_loc
     current_angle = -math.atan2(robot_vec[1], robot_vec[0])
     target_angle = math.atan2(-target_vec[1], target_vec[0])
-    rotation_angle = -min_angle(current_angle - target_angle) * (1 - self.spiral_factor) / 2
-    #print(37, rotation_angle, current_angle, target_angle)
+    
+    # rotate the vector from the first part by a fraction of the angle we are off by
+    rotation_angle = -min_angle(current_angle - target_angle) * self.rot_spiral_factor
     orbit_vec = convert_local(target_loc, rotation_angle)
+    
+    # if we are close to the ball push target location out
     move_to = orbit_vec + ball_extrapolation
     speed_mod_vec = move_to - self.robot.loc
-    if np.linalg.norm(speed_mod_vec) < 300:
+    if np.linalg.norm(speed_mod_vec) < self.speed_mod_distance:
       move_to = move_to + speed_mod_vec * abs(rotation_angle) * self.speed_mod_factor
     
-    rot_vec = convert_local(target_loc, -rotation_angle) * .85
+    # look a bit behind the ball so that as you orbit you are looking at the ball
+    rot_vec = convert_local(target_loc, -rotation_angle) * self.rot_lead_factor
     point_dir = (ball_extrapolation + rot_vec) - self.robot.loc
     target_rot = -math.atan2(point_dir[1], point_dir[0])
+    
+    # call pid code
     self.pid.set_target(move_to, target_rot)
     actions = self.pid.run()
     self.actions = actions
     self.moving_to = move_to
     return actions
-    
-if __name__ == "__main__":
-  game = PYsim(6)
-  orbit_action = orbit_ball(np.array([0,3000]))
-  move_action = move_to()
-  game.add_action(orbit_action, 0, True)
-  game.add_action(move_action, 0, False)
-  target_locs = [[-1000, 2000], [1000, -1000]]
-  move_action.set_target(target_locs[0], 0)
-  i = 0
-  
-  clock = pygame.time.Clock()
-  clock.tick(60)
-  ttime = clock.tick()
-  while 1:
-    for event in pygame.event.get():
-      if event.type == QUIT:
-        pygame.quit()
-        sys.exit()
-    
-    game.blue_robots[0].action.target_loc = game.yellow_robots[0].loc + game.yellow_robots[0].velocity
-        
-    new_time = clock.tick()
-    if game.yellow_robots[0].action.done():
-      if i == 0:
-        i = 1
-      else:
-        i = 0
-      move_action.set_target(target_locs[i], 0)
-    game.step()
-    ttime = new_time
