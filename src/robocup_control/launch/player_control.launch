@@ -1,0 +1,10 @@
+<launch>
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <rosparam file="$(find robocup_control)/config/player_control.yaml" command="load" />
+  <!-- Load joint limit configurations from YAML file to parameter server -->
+  <!-- Start Player Thread-->
+  <node name="player_thread" pkg="robocup_control" type="player_thread" respawn="false" output="screen" ns="/robocup_control"/>
+ 
+  <!-- Load the controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/robocup_control" args="joint_state_controller drive_controller"/>
+</launch>
