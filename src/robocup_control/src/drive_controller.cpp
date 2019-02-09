@@ -16,6 +16,9 @@ bool DriveController::init(hardware_interface::VelocityJointInterface* hw, ros::
   
   // effectively a constant
   double pi = 3.14159265;
+  
+  // load in the joint names from param server
+  // http://wiki.ros.org/Parameter%20Server
   n.getParam("/robocup_control/drive_controller/joints", joint_names);
   
   // get publish rate here
@@ -26,6 +29,7 @@ bool DriveController::init(hardware_interface::VelocityJointInterface* hw, ros::
   num_joints = joint_names.size();
   drive_motors.resize(num_joints);
 
+  // add angles to angle array
   motor_angles.push_back(pi / 3);
   motor_angles.push_back((3 * pi) / 4);
   motor_angles.push_back((5 * pi) / 4);
@@ -38,7 +42,7 @@ bool DriveController::init(hardware_interface::VelocityJointInterface* hw, ros::
 
   // subcribing to speed commands
   // will only be switched on for simulation
-  speed_sub = n.subscribe("/robocup_control/command_speeds", 1, &DriveController::handleDriveCommand, this);
+  speed_sub = n.subscribe("/robocup_control/command_speed", 1, &DriveController::handleDriveCommand, this);
 
   return true;
 }
