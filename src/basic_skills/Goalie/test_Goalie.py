@@ -1,6 +1,5 @@
 import sys
 import numpy as np
-#replace this with your path to robocup-ai
 sys.path.insert(0, '../..')
 from basic_skills.Goalie.Goalie import *
 from pygame_simulator.PySim_noise import *
@@ -24,12 +23,12 @@ if __name__ == "__main__":
       if event.type == MOUSEBUTTONDOWN:
         pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
         
-        #place ball with left mouse
+        # place ball with left mouse
         if pressed1:
           game.ball_internal.loc = game.convert_to_field_position(pygame.mouse.get_pos())
           game.ball_internal.velocity = np.array([0,0])
           
-        #throw ball with right mouse
+        # throw ball with right mouse
         if pressed3:
           game.ball_internal.velocity = (game.convert_to_field_position(pygame.mouse.get_pos()) - game.ball_internal.loc)
     new_time = clock.tick()

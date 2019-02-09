@@ -11,12 +11,9 @@ from pygame_simulator.PySim_noise import *
 '''
 moves around the ball so that it faces target_loc
 '''
-class orbit_ball(action):
+class orbit_ball(move_to):
   def __init__(self, target_loc = False, offset = 125):
-    action.__init__(self)
-    self.pid = move_to()
-    self.move_to = False
-    self.target_loc = target_loc
+    move_to.__init__(self)
     
     # how quickly the robot moves around the ball. Larger is slower
     self.spiral_factor = 0.35
@@ -39,7 +36,6 @@ class orbit_ball(action):
     
   def add(self, robot, game):
     self.robot = robot
-    self.pid.add(robot, game)
     action.add(self, robot, game)
     
   def run(self):
@@ -65,10 +61,10 @@ class orbit_ball(action):
     orbit_vec = convert_local(target_loc, rotation_angle)
     
     # if we are close to the ball push target location out
-    move_to = orbit_vec + ball_extrapolation
-    speed_mod_vec = move_to - self.robot.loc
+    move_to_V = orbit_vec + ball_extrapolation
+    speed_mod_vec = move_to_V - self.robot.loc
     if np.linalg.norm(speed_mod_vec) < self.speed_mod_distance:
-      move_to = move_to + speed_mod_vec * abs(rotation_angle) * self.speed_mod_factor
+      move_to_V = move_to_V + speed_mod_vec * abs(rotation_angle) * self.speed_mod_factor
     
     # look a bit behind the ball so that as you orbit you are looking at the ball
     rot_vec = convert_local(target_loc, -rotation_angle) * self.rot_lead_factor
@@ -76,8 +72,8 @@ class orbit_ball(action):
     target_rot = -math.atan2(point_dir[1], point_dir[0])
     
     # call pid code
-    self.pid.set_target(move_to, target_rot)
-    actions = self.pid.run()
+    self.set_target(move_to_V, target_rot)
+    actions = move_to.run(self)
     self.actions = actions
-    self.moving_to = move_to
+    self.moving_to = move_to_V
     return actions

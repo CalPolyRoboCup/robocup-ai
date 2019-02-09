@@ -1,6 +1,5 @@
 import sys
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
-#sys.path.insert(0, '../../GR_sim_networking')
+sys.path.insert(0, '../..')
 
 from pygame_simulator.PySim_noise import *
 from basic_skills.cover.cover import *

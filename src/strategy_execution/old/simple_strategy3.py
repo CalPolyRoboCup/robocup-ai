@@ -15,10 +15,6 @@ from matplotlib.widgets import Slider, Button, RadioButtons
 from pygame_simulator.PySim_noise import *
 from assign_closest import *
   
-class sudo_kick(action):
-  def run(self):
-    return [1,0,0,0,0]
-  
 def rate_positions(locations, enemies, important_static_points):
   res = []
   important_passes = []
@@ -194,7 +190,7 @@ class strategy:
     if self.passing == 0:
       
       if not self.attacking:
-        #print("first", self.is_blue)
+        print("first", self.is_blue)
         self.defending = False
         self.attacking = True
         self.neutral = False
@@ -236,12 +232,11 @@ class strategy:
       best_pass_loc = None
       best_value = 0
       first = True
-      kicking = False
       if goal_shot > good_pass_threshold:
         best_pass_loc = self.their_goal
         shot_vec = self.their_goal - self.game.ball.controler.loc
         #print(normalize_angle(self.game.ball.controler.rot), -math.atan2(shot_vec[1], shot_vec[0]), abs(normalize_angle(self.game.ball.controler.rot + math.atan2(shot_vec[1], shot_vec[0]))), abs(normalize_angle(self.game.ball.controler.rot + math.atan2(shot_vec[1], shot_vec[0]))) < .01)
-        if abs(normalize_angle(self.game.ball.controler.rot + math.atan2(shot_vec[1], shot_vec[0]))) < .02:
+        if abs(normalize_angle(self.game.ball.controler.rot + math.atan2(shot_vec[1], shot_vec[0]))) < .1:
           pv = self.their_goal - self.game.ball.controler.loc
           pv_scaleed = pv * 125 / np.linalg.norm(pv)
           #self.game.ball.loc = self.game.ball.controler.loc + pv_scaleed
@@ -251,8 +246,6 @@ class strategy:
           self.game.add_action(get_open([self.game.ball.loc, self.their_goal], [1,0.5], self.enemies, self.allies), self.game.ball.controler.id, self.is_blue)
           self.game.ball.controler.task = 0
           self.passing = 240
-          self.game.add_action(sudo_kick(), self.game.ball.controler.id, self.is_blue)
-          kicking = True
           self.pass_decay = 10
       else:
         controler_value = self.pass_decay + 4
@@ -278,12 +271,12 @@ class strategy:
         if self.pass_decay > 0:
           self.pass_decay -= .1
         #print(best_pass_rating > good_pass_threshold, best_value > controler_value, abs(normalize_angle(self.game.ball.controler.rot - math.atan2(best_pass_vec[1], best_pass_vec[0]))) < .1)
-        if best_pass_rating > good_pass_threshold and best_value > controler_value and abs(normalize_angle(self.game.ball.controler.rot + math.atan2(best_pass_vec[1], best_pass_vec[0]))) < .02:
+        if best_pass_rating > good_pass_threshold and best_value > controler_value and abs(normalize_angle(self.game.ball.controler.rot + math.atan2(best_pass_vec[1], best_pass_vec[0]))) < .1:
           print("pass to ", free_allies[i].id, self.is_blue, pass_rating)
-          #pv = best_pass_loc - self.game.ball.controler.loc
-          #pv_scaleed = pv * 125 / np.linalg.norm(pv)
+          pv = best_pass_loc - self.game.ball.controler.loc
+          pv_scaleed = pv * 125 / np.linalg.norm(pv)
           #self.game.ball.loc = self.game.ball.controler.loc + pv_scaleed
-          #self.game.ball_internal.velocity = pv_scaleed*11
+          self.game.ball_internal.velocity = pv_scaleed*11
           #self.game.ball.controler.add_action(pass_to(free_allies[i]))
           self.pass_decay = 10
           self.passing = self.pass_wait
@@ -291,10 +284,8 @@ class strategy:
           #print(best_allie.id, self.game, self.game.add_action, intercept_ball(), self.is_blue)
           self.game.add_action(intercept_ball(), best_allie.id, self.is_blue)
           best_allie.action.iterations = 0
-          self.game.add_action(sudo_kick(), self.game.ball.controler.id, self.is_blue)
-          kicking = True
-      if not kicking:
-        self.game.add_action(orbit_ball(best_pass_loc), self.game.ball.controler.id, self.is_blue)
+        
+      self.game.ball.controler.add_action(orbit_ball(best_pass_loc))
       
     
   def neutral_strategy(self):
@@ -378,6 +369,6 @@ if __name__ == "__main__":
     else:
       kp = []
     game.step()#key_points = kp
-    blue_strategy.update()
+    #blue_strategy.update()
     yellow_strategy.update()
     ttime = new_time

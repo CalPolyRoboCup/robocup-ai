@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '..') 
+sys.path.insert(0, '..')
 from basic_skills.action import *
 from basic_skills.move_to.move_to import *
 from basic_skills.cover.cover import *

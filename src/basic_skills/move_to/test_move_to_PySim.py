@@ -1,6 +1,5 @@
 import sys
 sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
-#sys.path.insert(0, '../../GR_sim_networking')
 
 from pygame_simulator.PySim_noise import *
 from basic_skills.move_to.move_to_collisions import *
@@ -41,7 +40,6 @@ def PID_tuning_tool(move_action):
     move_action.rotD = RDsl.val
     event.canvas.draw()
     plt.clf()
-    #print("tool_thread", move_action.locP)
   plt.gcf().canvas.mpl_connect('button_press_event', update)
   plt.show()
 
@@ -70,6 +68,7 @@ if __name__ == "__main__":
         sys.exit()
       if event.type == MOUSEBUTTONDOWN:
         pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
+        
         #left mouse button
         if pressed1:
           print("high")
@@ -86,7 +85,8 @@ if __name__ == "__main__":
       # game.blue_robots_internal[0].loc = random_location
       # game.blue_robots_internal[0].rot = random_rotation
       # game.blue_robots_internal[0].velocity = random_velocity
-      #move_action.set_target(random_location, random_rotation)#np.array([0,0]), random_rotation)
+      # move_action.set_target(random_location, random_rotation)
+      
     game.step()
     j += 1
     ttime = new_time

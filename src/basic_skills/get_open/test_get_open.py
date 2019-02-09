@@ -1,5 +1,4 @@
 import sys
-#replace this with your path to robocup-ai
 sys.path.insert(0, '../..')
 from basic_skills.get_open.get_open import *
 from pygame_simulator.PySim_noise import *
@@ -44,17 +43,20 @@ if __name__ == "__main__":
         sys.exit()
       if event.type == MOUSEBUTTONDOWN:
         pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
-        #left mouse button
+        
+        # left mouse button
         if pressed1:
           print("high")
           game.yellow_robots_internal[1].loc = game.convert_to_field_position(pygame.mouse.get_pos())
-        #right mouse button
+          
+        # right mouse button
         if pressed3:
           print("hiiii")
           game.yellow_robots_internal[0].loc = game.convert_to_field_position(pygame.mouse.get_pos())
       if event.type == KEYDOWN or event.type == KEYUP:
         keys = pygame.key.get_pressed()
-        #press r-key to reset
+        
+        # press r-key to reset
         if keys[K_r]:
           game.reset()
     new_time = clock.tick()

@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '../..')
 from basic_skills.action import *
 from basic_skills.helper_functions import *
 from basic_skills.action import *
@@ -11,8 +11,6 @@ from basic_skills.dribble_ball.dribble_ball import *
 from basic_skills.get_open.get_open import *
 
 from pygame_simulator.PySim_noise import *
-from basic_skills.ball_interception.Ball_Interception import *
-from basic_skills.ball_interception.Catch_Pygym import *
 
 class get_open_with_ball(action):
   def __init__(self, points, weights, enemies):

@@ -1,7 +1,7 @@
 import math
 import sys
 #replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+sys.path.insert(0, '../..')
 from GR_sim_networking.GR_Interact import *
 from basic_skills.helper_functions import *
 
@@ -23,7 +23,7 @@ class Ball_Intercept_Gym (GRsim):
     distance = min_angle(target - self.blue_robots[0].rot)
     self.dog.append(distance)
     self.fish.append(self.blue_robots[0].rot_vel)
-    if (0 == self.time % 200):
+    if (0 == self.time % 400):
       plt.figure(2)
       c, = plt.plot(self.cat, label = "action")
       d, = plt.plot(self.dog, label = "rot")
