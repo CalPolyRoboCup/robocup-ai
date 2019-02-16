@@ -1,8 +1,7 @@
 import sys
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
 
-from pygame_simulator.PySim_noise import *
-from basic_skills.move_to.move_to_collisions import *
+from pysim.PySim_noise import *
+from basic_skills.move_to import *
 
 import threading
 import matplotlib.pyplot as plt

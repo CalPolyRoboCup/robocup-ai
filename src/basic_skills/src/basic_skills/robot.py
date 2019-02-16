@@ -1,6 +1,4 @@
 import sys
-#replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
 from basic_skills.helper_functions import min_angle
 import numpy as np
 import time

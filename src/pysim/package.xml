@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>basic_skills</name>
+  <name>pysim</name>
   <version>0.0.0</version>
-  <description>The basic_skills package contains implementations of the abilities that a robot must exhibit in order to competently play soccer</description>
+  <description>The pysim package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="willle3456@gmail.com">William Le</maintainer>
+  <maintainer email="willdle@todo.todo">willdle</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/basic_skills</url> -->
+  <!-- <url type="website">http://wiki.ros.org/pysim</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
@@ -49,17 +49,9 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>python-numpy</build_depend>
-  <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
-  <build_export_depend>std_msgs</build_export_depend>
-  <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
-  <exec_depend>std_msgs</exec_depend>
-  <exec_depend>python_numpy</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

@@ -1,5 +1,4 @@
 import sys
-sys.path.insert(0, '..')
 from basic_skills.robot import *
 from basic_skills.action import *
 from PySim_noise import PYsim

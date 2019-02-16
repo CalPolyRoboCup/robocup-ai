@@ -1,8 +1,7 @@
 import sys
-sys.path.insert(0, '../..')
 
-from pygame_simulator.PySim_noise import *
-from basic_skills.cover.cover import *
+from pysim.PySim_noise import *
+from skill_execution.cover import *
 
 
 game = PYsim(6)

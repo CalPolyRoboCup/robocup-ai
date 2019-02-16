@@ -1,7 +1,4 @@
-
 import sys
-#replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
 from basic_skills.action import *
 from basic_skills.move_to.move_to import *
 from pygame_simulator.PySim import *

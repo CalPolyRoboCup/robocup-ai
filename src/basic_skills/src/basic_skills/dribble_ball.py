@@ -1,9 +1,8 @@
 import numpy as np
 import math
 import sys
-sys.path.insert(0, '../..')
 from basic_skills.action import *
-from basic_skills.move_to.move_to import *
+from basic_skills.move_to import *
 from basic_skills.helper_functions import *
 
 robot_rotation_speed = 4.25

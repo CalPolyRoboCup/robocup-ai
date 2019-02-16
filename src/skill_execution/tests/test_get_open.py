@@ -1,7 +1,6 @@
 import sys
-sys.path.insert(0, '../..')
-from basic_skills.get_open.get_open import *
-from pygame_simulator.PySim_noise import *
+from skill_execution.get_open import *
+from pysim.PySim_noise import *
 
 if __name__ == "__main__":
   max_bots_per_team = 6

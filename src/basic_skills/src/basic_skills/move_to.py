@@ -1,10 +1,8 @@
 import sys
-#replace this with your path to robocup-ai
-sys.path.insert(0, '../..')
 from basic_skills.action import *
 from basic_skills.helper_functions import *
 
-from pygame_simulator.PySim_noise import *
+from pysim.PySim_noise import *
 import threading
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button, RadioButtons

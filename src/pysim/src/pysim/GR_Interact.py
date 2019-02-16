@@ -1,8 +1,7 @@
 import sys
-#replace this with your path to robocup-ai
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
 from basic_skills.robot import *
 from basic_skills.helper_functions import *
+from basic_skills.action import *
 
 #for vector math
 import numpy as np
@@ -78,9 +77,9 @@ class PYsim:
 
     self.font = pygame.font.SysFont("Impact", 55)
     self.screen = pygame.display.set_mode(self.screen_res, pygame.HWSURFACE, 32)
-    self.field_image = pygame.image.load("/Users/nathan/Documents/robocup-ai/src/resources/Field.png").convert_alpha()
-    self.blue_robot_image = pygame.image.load("/Users/nathan/Documents/robocup-ai/src/resources/BlueBot.png").convert_alpha()
-    self.yellow_robot_image = pygame.image.load("/Users/nathan/Documents/robocup-ai/src/resources/YellowBot.png").convert_alpha()
+    self.field_image = pygame.image.load("../resources/Field.png").convert_alpha()
+    self.blue_robot_image = pygame.image.load("../resources/BlueBot.png").convert_alpha()
+    self.yellow_robot_image = pygame.image.load("../resources/YellowBot.png").convert_alpha()
     
     self.time_step = 1/60
     
@@ -237,7 +236,7 @@ class PYsim:
     return state_blue, state_yellow
     
 class keyboard_control(action):
-    
+  pass   
 #simple test code 
 if __name__ == "__main__":
   max_bots_per_team = 6

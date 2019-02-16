@@ -1,7 +1,6 @@
 import sys
-sys.path.insert(0, '../..')
-from basic_skills.orbit_ball.orbit_ball import *
-from pygame_simulator.PySim_noise import *
+from basic_skills.orbit_ball import *
+from pysim.PySim_noise import *
 
 '''
 yellow robot moves back and forth while the blue robot orbits the ball to look at the yellow robot

@@ -1,13 +1,12 @@
 import numpy as np
 import math
 import sys
-sys.path.insert(0, '../..')
 from basic_skills.helper_functions import *
 from basic_skills.action import *
-from basic_skills.move_to.move_to import *
-from basic_skills.dribble_ball.dribble_ball import *
+from basic_skills.move_to import *
+from basic_skills.dribble_ball import *
 
-from pygame_simulator.PySim_noise import *
+from pysim.PySim_noise import *
 
 def worst_intercept(location, p, enemies):
   '''
@@ -111,7 +110,7 @@ class get_open(action):
     
   def add(self, robot, game):
     action.add(self, robot, game)
-    type(self.pid).add(self.pid, robot, game)
+    self.pid.add(robot, game)
     self.lag_loc = robot.loc
     
   def rate_point(self, location):

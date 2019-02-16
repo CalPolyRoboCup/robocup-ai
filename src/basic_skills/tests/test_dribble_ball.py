@@ -1,7 +1,6 @@
 import sys
-sys.path.insert(0, '../..')
-from basic_skills.dribble_ball.dribble_ball import dribble_ball
-from pygame_simulator.PySim_noise import *
+from basic_skills.dribble_ball import dribble_ball
+from pysim.PySim_noise import *
 
 game = PYsim(6)
 dribble_action = dribble_ball(np.array([0,3000]))

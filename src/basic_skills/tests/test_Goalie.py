@@ -1,8 +1,7 @@
 import sys
 import numpy as np
-sys.path.insert(0, '../..')
-from basic_skills.Goalie.Goalie import *
-from pygame_simulator.PySim_noise import *
+from basic_skills.Goalie import *
+from pysim.PySim_noise import *
 
 if __name__ == "__main__":
   game = PYsim(6)

@@ -1,12 +1,11 @@
 import numpy as np
 import math
 import sys
-sys.path.insert(0, '../..')
 from basic_skills.action import *
-from basic_skills.move_to.move_to import *
+from basic_skills.move_to import *
 from basic_skills.helper_functions import *
 from matplotlib.widgets import Slider, Button, RadioButtons
-from pygame_simulator.PySim_noise import *
+from pysim.PySim_noise import *
 
 '''
 moves around the ball so that it faces target_loc

@@ -1,12 +1,8 @@
 import numpy as np
 import sys
-sys.path.insert(0, '../..')
 from basic_skills.action import *
-from basic_skills.move_to.move_to import move_to
-from pygame_simulator.PySim_noise import *
-
- 
-
+from basic_skills.move_to import move_to
+from pysim.PySim_noise import *
 
 class Goalie(action):
   # Covers a pass from target_ball to target_loc
