@@ -7,7 +7,7 @@ from basic_skills.move_to.move_to import *
 from basic_skills.helper_functions import *
 
 
-class cover(action):
+class Cover(Action):
 
   # used to lead robots bassed on the time it would take them to swivel to face target_loc
   robot_rotation_speed = 4.25
@@ -18,11 +18,11 @@ class cover(action):
   '''
   covers a pass from target_robot to target_loc
   '''
-  def __init__(self, target_loc, target_robot, interpose_factor = .5, min_interpose_offset = 0, interpose_weight = 25, lead_target_robot = True):
-    action.__init__(self)
+  def __init__(self, game, target_loc, target_robot, interpose_factor = .5, min_interpose_offset = 0, interpose_weight = 25, lead_target_robot = True):
+    Action.__init__(self, game)
     
     # this action generates calls to move_to to produce its actions
-    self.pid = move_to()
+    self.pid = MoveTo(game)
     self.move_to = False
     
     self.target_loc = target_loc
@@ -44,16 +44,15 @@ class cover(action):
     # controls how quickly the robot switches from quickest path to target loc movement
     self.interpose_weight = interpose_weight
     
-  def add(self, robot, game):
+  def add(self, robot):
     '''
     Add this action and its move_to action to the robot
     Note that the move_to action (pid) is added first so only 
     this action remains on the robot. The move_to action is
     still updated with references to the robot and game though
     '''
-    self.robot = robot
-    self.pid.add(robot, game)
-    action.add(self, robot, game)
+    self.pid.add(robot)
+    Action.add(self, robot)
     
   def run(self):
     '''
@@ -74,7 +73,7 @@ class cover(action):
       shooting_pos = shooting_pos + self.target_robot.velocity * delta_angle / cover.robot_rotation_speed
       
     # Find the point that will put you between the shooting position and the ball the quickest
-    quickest_loc = drop_perpendicular(self.robot.loc, shooting_pos, shooting_vec)
+    quickest_loc = drop_perpendicular(self.get_robot().loc, shooting_pos, shooting_vec)
     
     # if we are too close to the ball force a offset
     if np.linalg.norm(shooting_vec) * self.interpose_factor < self.min_interpose_offset and np.linalg.norm(shooting_vec) > cover.EPS:
@@ -85,12 +84,12 @@ class cover(action):
       interpose_loc = shooting_pos + shooting_vec * self.interpose_factor
       
     # use our distance to the ball to average the two points (interpose_loc, quickest_loc) together
-    quickest_distance = np.linalg.norm(quickest_loc - self.robot.loc)
+    quickest_distance = np.linalg.norm(quickest_loc - self.get_robot().loc)
     move_to = ((quickest_loc * quickest_distance + interpose_loc * self.interpose_weight)
                   / (self.interpose_weight + quickest_distance))
     
     # look at the ball
-    point_dir = self.target_robot.loc - self.robot.loc
+    point_dir = self.target_robot.loc - self.get_robot().loc
     target_rot = -math.atan2(point_dir[1], point_dir[0])
     
     # call PID
@@ -100,17 +99,17 @@ class cover(action):
     self.move_to = move_to
     return actions
     
-class cover_robots(action):
+class CoverRobots(Action):
   robot_rotation_speed = 4.25
   EPS = 0.001
   '''
   Covers a pass from target_bot1 to target_bot2
   '''
-  def __init__(self, target_bot1, target_bot2, interpose_factor = .5, min_interpose_offset = 190, interpose_weight = 25, lead_target_robot = True):
-    action.__init__(self)
+  def __init__(self, game, target_bot1, target_bot2, interpose_factor = .5, min_interpose_offset = 190, interpose_weight = 25, lead_target_robot = True):
+    Action.__init__(self, game)
     
     # this action generates calls to move_to to produce its actions
-    self.pid = move_to()
+    self.pid = MoveTo(game)
     self.move_to = False
     self.target_bot1 = target_bot1
     self.target_bot2 = target_bot2
@@ -129,16 +128,15 @@ class cover_robots(action):
     # controls how quickly the robot switches from quickest path to target loc movement
     self.interpose_weight = interpose_weight
     
-  def add(self, robot, game):
+  def add(self, robot):
     '''
     Add this action and its move_to action to the robot
     Note that the move_to action (pid) is added first so only 
     this action remains on the robot. The move_to action is
     still updated with references to the robot and game though
     '''
-    self.robot = robot
-    self.pid.add(robot, game)
-    action.add(self, robot, game)
+    self.pid.add(robot)
+    Action.add(self, robot)
     
   def run(self):
     '''
@@ -165,7 +163,7 @@ class cover_robots(action):
         shooting_pos = shooting_pos + self.target_bot2.velocity * delta_angle / cover_robots.robot_rotation_speed
       
     # Find the point that will put you between the shooting position and the ball the quickest
-    quickest_loc = drop_perpendicular(self.robot.loc, shooting_pos, shooting_vec)
+    quickest_loc = drop_perpendicular(self.get_robot().loc, shooting_pos, shooting_vec)
     
     # if we are too close to the ball force a offset
     if np.linalg.norm(shooting_vec) * self.interpose_factor < self.min_interpose_offset and np.linalg.norm(shooting_vec) > cover_robots.EPS:
@@ -176,12 +174,12 @@ class cover_robots(action):
       interpose_loc = shooting_pos + shooting_vec * self.interpose_factor
       
     # use our distance to the ball to average the two points (interpose_loc, quickest_loc) together
-    quickest_distance = np.linalg.norm(quickest_loc - self.robot.loc)
+    quickest_distance = np.linalg.norm(quickest_loc - self.get_robot().loc)
     move_to = ((quickest_loc * quickest_distance + interpose_loc * self.interpose_weight)
                   / (self.interpose_weight + quickest_distance))
     
     # look at the ball
-    point_dir = self.target_bot1.loc - self.robot.loc
+    point_dir = self.target_bot1.loc - self.get_robot().loc
     target_rot = -math.atan2(point_dir[1], point_dir[0])
     
     # call PID

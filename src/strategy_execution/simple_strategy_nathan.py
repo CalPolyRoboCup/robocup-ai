@@ -34,13 +34,16 @@ class strategy:
       self.allies = game.blue_robots
       #hack to identify goalie
       self.enemies = game.yellow_robots
-      self.my_goal = [-5000,0]
-      self.their_goal = [5000,0]
+      self.my_goal = np.array([-5000,0])
+      self.their_goal = np.array([5000,0])
     else:
       self.enemies = game.blue_robots
       self.allies = game.yellow_robots
-      self.my_goal = [5000,0]
-      self.their_goal = [-5000,0]
+      self.my_goal = np.array([5000,0])
+      self.their_goal = np.array([-5000,0])
+    self.blocker_enemies = [robot(not is_blue, -1, None), robot(not is_blue, -1, None)]
+    self.blocker_enemies[0].loc = self.their_goal + np.array([0, self.game.goal_height/2])
+    self.blocker_enemies[1].loc = self.their_goal + np.array([0, -self.game.goal_height/2])
     self.goalie = self.allies[-1]
     self.internal_ratings = []
     
@@ -53,7 +56,11 @@ class strategy:
     self.pass_timer = 0
     self.ball_controler = -1
     
-    self.handle_action = handle_ball(self.allies, self.enemies, self.their_goal)
+    self.pass_action = pass_to(self.allies[0])
+    self.dribble_action = protect_ball()
+    
+    self.attempt_pass = 0
+    self.pass_signal_linger = 10
     
   def defensive_strategy(self):
     #on entering state assign each robot an enemy to guard
@@ -128,20 +135,22 @@ class strategy:
     def squash_intercept(intercept):
       if intercept > 300:
         intercept = 300
-      return (300 - intercept)/300
+      return intercept/300
   
     raw_values = []
     for r in self.allies:
       if r.id == self.ball_controler:
         raw_values.append(self.controler_value)
       else:
-        shot_likelyhood = squash_intercept(worst_intercept(r.loc, self.their_goal, self.blocker_enemies))
+        shot_likelyhood = squash_intercept(worst_intercept(r.loc, self.their_goal, self.blocker_enemies + [e.loc for e in self.enemies]))
         cell_value = self.cell_values[get_cell(r.loc)]
-        raw_values.append(shot_likelyhood * self.shot_value + cell_value)
+        
+        sticky_value = self.sticky_value if r.id == old_best_id else 0
+        raw_values.append(shot_likelyhood * self.shot_value + cell_value + sticky_value)
      
     values = [v for v in raw_values]
     for r in self.allies:
-      pass_likelyhood = squash_intercept(worst_intercept(self.game.ball.loc, r.loc, self.blocker_enemies))
+      pass_likelyhood = squash_intercept(worst_intercept(self.game.ball.loc, r.loc, self.blocker_enemies + [e.loc for e in self.enemies]))
       for other in self.allies:
         if other.id != r.id:
           secondary_pass_likelyhood = squash_intercept(worst_intercept(r.loc, other.loc, self.blocker_enemies))
@@ -149,24 +158,27 @@ class strategy:
           
       values[r.id] *= pass_likelyhood
     
+    return values
+    
   def handle_ball(self):
-    # if we can shoot at the goal
-    if worst_intercept(self.robot.loc, self.goal, self.enemies)[0] > self.goal_shot_margin:
-      best = robot(False, -1, None)
-      best.loc = self.goal
+    # if we can shoot at the goal and haven't already started shooting
+    if worst_intercept(self.allies[self.ball_controler].loc, self.their_goal, self.enemies)[0] > self.goal_shot_margin:
+      self.game.add_action(shoot_goal(self.is_blue), self.ball_controler, self.is_blue)
     else:
       scores = self.evaluate_robots()
-    
-      if best_score > self.current_score:
-        self.pass_to.target_robot = best
-        actions = self.pass_to.run()
+      best_score = max(sores)
+      best_index = scores.index(best_score)
+      if best_score > scores[self.ball_controler]:
+        self.pass_action.target_robot = self.allies[best_index]
+        self.game.add_action(self.pass_action, self.ball_controler, self.is_blue)
+        if (self.pass_action.kick):
+          self.attempt_pass = self.pass_signal_linger
+          self.pass_action.kick = 0
       else:
-        actions = self.dribble.run()
+        self.game.add_action(self.dribble_action, self.ball_controler, self.is_blue)
         
-    if (actions[0]):
-      self.passing = self.pass_signal_linger
-    elif self.passing:
-      self.passing -= 1
+    if self.attempt_pass:
+      self.attempt_pass -= 1
     
   def offensive_strategy(self):
     #put the handle_ball action on the ball_controler
@@ -187,7 +199,7 @@ class strategy:
         
         
     #if the ball controller wants to pass and the ball has started moving
-    if self.handle_action.passing and np.linalg.norm(self.game.ball.velocity) > 50 and self.game.ball.controler == False:
+    if self.attempt_pass and np.linalg.norm(self.game.ball.velocity) > 50 and self.game.ball.controler == False:
       self.attacking = False
       self.passing = True
       self.transition = True

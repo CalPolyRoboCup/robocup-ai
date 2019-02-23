@@ -1,5 +1,7 @@
 import sys
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname + '/../..')
 
 from pygame_simulator.PySim_noise import *
 from basic_skills.move_to.move_to_collisions import *
@@ -49,7 +51,7 @@ if __name__ == "__main__":
   clock = pygame.time.Clock()
   clock.tick(60)
   ttime = clock.tick()
-  move_action = move_to()
+  move_action = move_to(game)
   move_action.set_target(np.array([0,0]), 0)
   '''
   make a separate thread to tune PID
@@ -72,7 +74,7 @@ if __name__ == "__main__":
         #left mouse button
         if pressed1:
           print("high")
-          game.blue_robots_internal[0].action.set_target(game.convert_to_field_position(pygame.mouse.get_pos()), 0)
+          game.blue_Robots_internal[0]._action.set_target(game.convert_to_field_position(pygame.mouse.get_pos()), 0)
     new_time = clock.tick()
     
     '''
@@ -82,9 +84,9 @@ if __name__ == "__main__":
       # random_location = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
       # random_velocity = np.random.uniform(-1, 1, size = [2])*np.array([500, 500])
       # random_rotation = np.random.uniform(-2*math.pi, 2*math.pi)
-      # game.blue_robots_internal[0].loc = random_location
-      # game.blue_robots_internal[0].rot = random_rotation
-      # game.blue_robots_internal[0].velocity = random_velocity
+      # game.blue_Robots_internal[0].loc = random_location
+      # game.blue_Robots_internal[0].rot = random_rotation
+      # game.blue_Robots_internal[0].velocity = random_velocity
       # move_action.set_target(random_location, random_rotation)
       
     game.step()

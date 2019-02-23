@@ -16,7 +16,7 @@ class Ball_Intercept_PYGym (PYsim):
     
   def score(self):
     velocity_loss = np.linalg.norm(self.ball.velocity)
-    nearness_loss = np.linalg.norm(self.ball.loc - self.blue_robots[0].loc)
+    nearness_loss = np.linalg.norm(self.ball.loc - self.blue_Robots[0].loc)
     return velocity_loss + nearness_loss
     
   def new_scenario(self):
@@ -26,7 +26,7 @@ class Ball_Intercept_PYGym (PYsim):
     random_offset = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
     self.ball_internal.loc = random_offset
     random_offset = np.random.uniform(-1, 1, size = [2])*np.array([500, 500])
-    target_loc = self.blue_robots[0].loc + random_offset
+    target_loc = self.blue_Robots[0].loc + random_offset
     speed = np.random.uniform(100,800)
     self.ball_internal.velocity = (target_loc - self.ball.loc)
     self.ball_internal.velocity *= speed/np.linalg.norm(self.ball_internal.velocity)
