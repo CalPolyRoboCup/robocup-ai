@@ -1,2 +1,0 @@
-uint16_t strategy
-uint16_t additional_rules
