@@ -1,7 +1,9 @@
 import numpy as np
 import math
 import sys
-sys.path.insert(0, '../..')
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname)
 from basic_skills.action import *
 from basic_skills.move_to.move_to import *
 from basic_skills.helper_functions import *
@@ -12,7 +14,7 @@ this is basically a reskin of orbit ball with parameters tuned so that it pushes
 TODO: make it so we drop control of the ball before traveling 1m from where we last took control of the ball to
 abide by rules
 '''
-class dribble_ball(MoveTo):
+class DribbleBall(MoveTo):
   # reskin of orbit_ball, offset is 90 (ball radius is 120)
   # makes the robot push into the ball
   # results in "dribbling" the ball to target_loc

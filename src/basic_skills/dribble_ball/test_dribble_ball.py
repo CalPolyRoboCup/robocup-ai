@@ -1,10 +1,12 @@
 import sys
-sys.path.insert(0, '../..')
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname)
 from basic_skills.dribble_ball.dribble_ball import dribble_ball
 from pygame_simulator.PySim_noise import *
 
 game = PYsim(6)
-dribble_action = dribble_ball(game, np.array([0,3000]))
+dribble_action = DribbleBall(game, np.array([0,3000]))
 game.add_action(dribble_action, 0, True)
 i = 0
 

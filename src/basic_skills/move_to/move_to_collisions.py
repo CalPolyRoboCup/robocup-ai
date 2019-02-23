@@ -1,5 +1,7 @@
 import sys
-sys.path.insert(0, '../..')
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname)
 from basic_skills.action import *
 from basic_skills.helper_functions import *
 
