@@ -1,7 +1,9 @@
 import sys
-
-from pysim.PySim_noise import *
-from basic_skills.move_to import *
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname + "/../..")
+from basic_skills.src.basic_skills.move_to import *
+from pysim.src.pysim.PySim import *
 
 import threading
 import matplotlib.pyplot as plt
@@ -48,7 +50,7 @@ if __name__ == "__main__":
   clock = pygame.time.Clock()
   clock.tick(60)
   ttime = clock.tick()
-  move_action = move_to()
+  move_action = MoveTo(game)
   move_action.set_target(np.array([0,0]), 0)
   '''
   make a separate thread to tune PID
@@ -71,7 +73,7 @@ if __name__ == "__main__":
         #left mouse button
         if pressed1:
           print("high")
-          game.blue_robots_internal[0].action.set_target(game.convert_to_field_position(pygame.mouse.get_pos()), 0)
+          game.blue_robots_internal[0]._action.set_target(game.convert_to_field_position(pygame.mouse.get_pos()), 0)
     new_time = clock.tick()
     
     '''

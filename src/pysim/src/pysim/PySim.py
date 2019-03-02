@@ -1,10 +1,13 @@
-import os
 import sys
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname + "/../../..")
+
 import time
-from basic_skills.robot import *
-from basic_skills.action import *
-from basic_skills.helper_functions import *
-from pysim.ball import ball
+from basic_skills.src.basic_skills.Robot import *
+from basic_skills.src.basic_skills.action import *
+from basic_skills.src.basic_skills.helper_functions import *
+from pysim.src.pysim.ball import ball
 
 # for vector math
 import numpy as np
@@ -44,11 +47,11 @@ class PYsim:
     self.ball_radius = 25
   
     self.max_bots_per_team = max_bots_per_team
-    self.blue_robots = [robot(True, i, self) for i in range(self.max_bots_per_team)]
-    self.yellow_robots = [robot(False, i, self) for i in range(self.max_bots_per_team)]
+    self.blue_robots = [Robot(True, i, self, True) for i in range(self.max_bots_per_team)]
+    self.yellow_robots = [Robot(False, i, self, True) for i in range(self.max_bots_per_team)]
     
-    self.blue_robots_internal = [robot(True, i, self) for i in range(self.max_bots_per_team)]
-    self.yellow_robots_internal = [robot(False, i, self) for i in range(self.max_bots_per_team)]
+    self.blue_robots_internal = [Robot(True, i, self) for i in range(self.max_bots_per_team)]
+    self.yellow_robots_internal = [Robot(False, i, self) for i in range(self.max_bots_per_team)]
 
     pygame.display.set_caption('Pysim')
 
@@ -284,7 +287,7 @@ class PYsim:
             delta_time: the time between this step and the previous update
     '''
     self.update_bot_spinner(robot, delta_time)
-    action = robot.run_action()
+    action = robot.run_action(delta_time)
     if action == None:
       kick, chip, norm_vel, tang_vel, rot_vel = (0,0,0,0,0)
     else:

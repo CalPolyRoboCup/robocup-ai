@@ -1,11 +1,13 @@
 import sys
-import numpy as np
-from basic_skills.Goalie import *
-from pysim.PySim_noise import *
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname + "/../..")
+from basic_skills.src.basic_skills.Goalie import *
+from pysim.src.pysim.PySim import *
 
 if __name__ == "__main__":
   game = PYsim(6)
-  goalie_action = Goalie()
+  goalie_action = Goalie(game)
   game.add_action(goalie_action, 0, True)
   i = 0
   

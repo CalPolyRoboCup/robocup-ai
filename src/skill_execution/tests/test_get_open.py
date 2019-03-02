@@ -1,6 +1,10 @@
 import sys
-from skill_execution.get_open import *
-from pysim.PySim_noise import *
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname + "/../..")
+
+from pysim.src.pysim.PySim import *
+from skill_execution.src.skill_execution.get_open import *
 
 if __name__ == "__main__":
   max_bots_per_team = 6
@@ -20,14 +24,14 @@ if __name__ == "__main__":
   assumes yellow_robot 0 has the ball and [-5000,0] is the goal
   '''
   for i in game.yellow_robots[1:3]:
-    game.add_action(striker(game.yellow_robots[0], np.array([-5000,0]), game.blue_robots, game.yellow_robots), i.id, False)
+    game.add_action(striker(game.yellow_robots[0], np.array([-5000,0]), game.blue_robots, game.yellow_robots, game), i.id, False)
       
   '''
   Create the fielders
   assumes yellow_robot 0 has the ball and yellow_robot i.id - 2 is a striker
   '''
   for i in game.yellow_robots[3:5]:
-    game.add_action(fielder(game.yellow_robots[0], game.yellow_robots[i.id - 2], game.blue_robots, game.yellow_robots), i.id, False)
+    game.add_action(fielder(game.yellow_robots[0], game.yellow_robots[i.id - 2], game.blue_robots, game.yellow_robots, game), i.id, False)
     
     
   while 1:
@@ -59,5 +63,5 @@ if __name__ == "__main__":
         if keys[K_r]:
           game.reset()
     new_time = clock.tick()
-    game.step(key_points = game.yellow_robots[1].action.prints)
+    game.step(key_points = game.yellow_robots[1]._action.prints)
     ttime = new_time
