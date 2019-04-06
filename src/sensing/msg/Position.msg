@@ -1,0 +1,13 @@
+float64 pose_point_x
+float64 pose_point_y
+float64 pose_point_z
+float64 pose_quat_x
+float64 pose_quat_y
+float64 pose_quat_z
+float64 pose_quat_w
+float64 twist_lin_x
+float64 twist_lin_y
+float64 twist_lin_z
+float64 twist_ang_x
+float64 twist_ang_y
+float64 twist_ang_z
