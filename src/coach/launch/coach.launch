@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="coach" type="coach.py" name="coach" respawn="true"/>
+</launch>

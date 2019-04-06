@@ -21,6 +21,7 @@ class goalie(action):
       self.goal = np.array([-6500,0])
     else:
       self.goal = np.array([6500,0])
+      
   def run(self):
     adjustment = 2500000/(100 + np.linalg.norm(self.game.ball.loc - self.goal))
     
