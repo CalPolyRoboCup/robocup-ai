@@ -1,10 +1,7 @@
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "/../..")
 
-from pysim.src.pysim.PySim import *
-from skill_execution.src.skill_execution.get_open import *
+from pysim.PySim import *
+from skill_execution.get_open import *
 
 if __name__ == "__main__":
   max_bots_per_team = 6

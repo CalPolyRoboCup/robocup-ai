@@ -1,12 +1,9 @@
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "../../..")
 
-from pysim.src.pysim.PySim import *
+from pysim.PySim import *
 
-from action import *
-from helper_functions import *
+from basic_skills.action import *
+from basic_skills.helper_functions import *
 
 
 import numpy as np

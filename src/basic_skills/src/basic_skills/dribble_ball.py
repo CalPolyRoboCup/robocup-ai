@@ -1,13 +1,10 @@
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname)
 
 import numpy as np
 import math
-from action import *
-from move_to import *
-from helper_functions import *
+from basic_skills.action import *
+from basic_skills.move_to import *
+from basic_skills.helper_functions import *
 
 robot_rotation_speed = 4.25
 '''

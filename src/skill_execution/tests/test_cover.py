@@ -1,10 +1,7 @@
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "/../..")
 
-from pysim.src.pysim.PySim import *
-from skill_execution.src.skill_execution.cover import *
+from pysim.PySim import *
+from skill_execution.cover import *
 
 
 game = PYsim(6)

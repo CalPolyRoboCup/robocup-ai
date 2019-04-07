@@ -1,9 +1,6 @@
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "/../..")
-from basic_skills.src.basic_skills.dribble_ball import *
-from pysim.src.pysim.PySim import *
+from basic_skills.dribble_ball import *
+from pysim.PySim import *
 
 game = PYsim(6)
 dribble_action = DribbleBall(game, np.array([0,3000]))

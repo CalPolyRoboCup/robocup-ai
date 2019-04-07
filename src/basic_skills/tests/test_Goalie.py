@@ -1,9 +1,6 @@
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "/../..")
-from basic_skills.src.basic_skills.Goalie import *
-from pysim.src.pysim.PySim import *
+from basic_skills.Goalie import *
+from pysim.PySim import *
 
 if __name__ == "__main__":
   game = PYsim(6)

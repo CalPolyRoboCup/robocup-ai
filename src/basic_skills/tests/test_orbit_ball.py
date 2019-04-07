@@ -1,9 +1,6 @@
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "/../..")
-from basic_skills.src.basic_skills.orbit_ball import *
-from pysim.src.pysim.PySim import *
+from basic_skills.orbit_ball import *
+from pysim.PySim import *
 
 '''
 yellow robot moves back and forth while the blue robot orbits the ball to look at the yellow robot

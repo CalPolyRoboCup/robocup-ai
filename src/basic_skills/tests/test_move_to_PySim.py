@@ -1,9 +1,6 @@
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "/../..")
-from basic_skills.src.basic_skills.move_to import *
-from pysim.src.pysim.PySim import *
+from basic_skills.move_to import *
+from pysim.PySim import *
 
 import threading
 import matplotlib.pyplot as plt

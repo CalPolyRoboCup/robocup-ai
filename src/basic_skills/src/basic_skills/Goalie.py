@@ -1,17 +1,9 @@
-import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "/../../..")
-sys.path.insert(0, dirname)
-
 import numpy as np
-from action import *
-from move_to import *
+import sys
 
-from pysim.src.pysim.PySim import *
-
- 
-
+from basic_skills.action import *
+from basic_skills.move_to import MoveTo
+from pysim.PySim import *
 
 class Goalie(MoveTo):
   # Covers a pass from target_ball to target_loc

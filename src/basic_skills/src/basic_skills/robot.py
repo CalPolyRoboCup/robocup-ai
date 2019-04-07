@@ -1,9 +1,9 @@
-from helper_functions import min_angle
+from basic_skills.helper_functions import min_angle
 import numpy as np
 import time
 import math
 
-from action import *
+from basic_skills.action import *
 
 import logging
 

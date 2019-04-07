@@ -1,13 +1,10 @@
 import sys
 import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "/../../..")
-
 import time
-from basic_skills.src.basic_skills.Robot import *
-from basic_skills.src.basic_skills.action import *
-from basic_skills.src.basic_skills.helper_functions import *
-from pysim.src.pysim.ball import ball
+from basic_skills.robot import *
+from basic_skills.action import *
+from basic_skills.helper_functions import *
+from pysim.ball import ball
 
 # for vector math
 import numpy as np

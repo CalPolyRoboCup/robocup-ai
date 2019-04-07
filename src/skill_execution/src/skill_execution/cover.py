@@ -1,11 +1,10 @@
 import numpy as np
 import math
 import sys
-sys.path.insert(0, '../..')
-from action import *
-from move_to import *
-from helper_functions import *
-from Robot import Robot
+from basic_skills.action import *
+from basic_skills.move_to import *
+from basic_skills.helper_functions import *
+from basic_skills.robot import Robot
 
 
 class Cover(Action):

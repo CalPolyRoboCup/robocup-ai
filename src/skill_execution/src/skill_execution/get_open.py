@@ -1,15 +1,12 @@
 import numpy as np
 import math
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname+'/../../..')
-from basic_skills.src.basic_skills.helper_functions import *
-from basic_skills.src.basic_skills.action import *
-from basic_skills.src.basic_skills.move_to import *
-from basic_skills.src.basic_skills.dribble_ball import *
+from basic_skills.helper_functions import *
+from basic_skills.action import *
+from basic_skills.move_to import *
+from basic_skills.dribble_ball import *
 
-from pysim.src.pysim.PySim import *
+from pysim.PySim import *
 
 def worst_intercept(location, p, enemies):
   '''
