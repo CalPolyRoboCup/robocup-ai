@@ -1,23 +1,36 @@
 #!/usr/bin/env python
 
 import rospy
+from robocup_msgs.msg import *
 
 def coach():
-	pub = rospy.Publisher('strategy', Strategy, queue_size=10)
-	#Topic: strategy
-	#Message type: Strategy (exists in msg but not currently defined)
-	rospy.init_node('coach', anonymous = True)
-	rospy.Subscriber('locations', GameData, callback)
-	rate = rospy.Rate(10) #10 Hz
+	rospy.init_node("coach")
+
+	#Coach node subscribes to the locations topic
+	rospy.Subscriber("locations", Position, callback)
+
+	# Coach node publishes to the strategy topic
+	pub = rospy.Publisher("strategy", Strategy, queue_size=10)
+	rate = rospy.Rate(10) # 10 Hz
+
+	#Define the Strategy message
+	msg = Strategy()
+	msg.strategy = 0
+	msg.additional_rules = 0
+
+	#Publish the Strategy message to the strategy topic
 	while not rospy.is_shutdown():
-		currentStrat = None #temp
-		rospy.loginfo(currentStrat)
-		pub.publish(currentStrat)
+		#rospy.loginfo(msg)
+		pub.publish(msg)
 		rate.sleep()
-	rospy.spin()
+	
+
+#Process the Position message from the locations topic
+def callback(Position):
+	rospy.loginfo(Position.poses, Position.twists)
 
 if __name__ == '__main__':
 	try:
 		coach()
 	except rospy.ROSInterruptException:
-		pass
+		pass	
