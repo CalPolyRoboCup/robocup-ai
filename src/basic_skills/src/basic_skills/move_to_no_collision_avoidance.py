@@ -1,9 +1,6 @@
 import sys
-import os
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname + "../../..")
 
-from pysim.src.pysim.PySim import *
+from pysim.PySim import *
 import threading
 
 from action import *

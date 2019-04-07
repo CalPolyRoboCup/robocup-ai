@@ -1,7 +1,6 @@
-import sys
-
 import numpy as np
 import math
+import sys
 from basic_skills.action import *
 from basic_skills.move_to import *
 from basic_skills.helper_functions import *

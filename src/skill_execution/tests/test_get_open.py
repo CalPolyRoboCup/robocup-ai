@@ -1,7 +1,7 @@
 import sys
 
-from pysim.PySim import *
 from skill_execution.get_open import *
+from pysim.PySim import *
 
 if __name__ == "__main__":
   max_bots_per_team = 6
