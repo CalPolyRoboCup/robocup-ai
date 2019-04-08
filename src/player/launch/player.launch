@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="player" name="player" type="player.py" respawn="true"/>
+</launch>
