@@ -6,7 +6,7 @@ from basic_skills.action import *
 from basic_skills.move_to import *
 from basic_skills.dribble_ball import *
 
-from pysim.PySim_noise import *
+from pysim.PySim import *
 
 def worst_intercept(location, p, enemies):
   '''
@@ -56,7 +56,7 @@ def worst_intercept(location, p, enemies):
     
   return worst, worst_local, pangle
 
-class get_open(action):
+class get_open(MoveTo):
   '''
   brief: attempts to move the robot to a location that is capable of passing to each point in points
         points are weighted by weights
@@ -64,19 +64,20 @@ class get_open(action):
         If the current location is bad or another robot with the same "task" is to close the robot will
         move to a new location
   '''
-  def __init__(self, points, weights, enemies, allies):
+  def __init__(self, points, weights, enemies, allies, game):
     '''
     params: points - points to optimize passes to
             weights - relative importance of points. Must be the same size as points
             enemies - list of enemy robots. Used to calculated pass values
             allies - list of allied robots. Used to ensure robots spread out.
     '''
-    action.__init__(self)
+    MoveTo.__init__(self, game)
     self.points = points
     self.weights = weights
     self.enemies = enemies
     self.allies = allies
     self.move_to = np.array([0,0])
+    self.game = game
     
     '''
     magic numbers
@@ -105,12 +106,9 @@ class get_open(action):
     # score representing how well this robot can make passes to points
     self.current_score = 0
     self.lag_loc = np.array([0,0])
-
-    self.pid = move_to()
     
-  def add(self, robot, game):
-    action.add(self, robot, game)
-    self.pid.add(robot, game)
+  def add(self, robot):
+    Action.add(self, robot)
     self.lag_loc = robot.loc
     
   def rate_point(self, location):
@@ -195,7 +193,7 @@ class get_open(action):
         first = False
     return best_point, best
     
-  def run(self):
+  def run(self, delta_time):
     # while darting move to "better loc"
     if self.dart > 0:
       move_to = self.dart_to
@@ -215,56 +213,56 @@ class get_open(action):
         self.dart = 120
         self.dart_to, score = self.get_better_loc()
       self.current_score = score
-      move_to = self.robot.loc + self.speed_mod*(improvement - self.robot.loc)
+      move_to = self._robot.loc + self.speed_mod*(improvement - self._robot.loc)
     
-    self.lag_loc = self.robot.loc * .1 + .9 * self.lag_loc
+    self.lag_loc = self._robot.loc * .1 + .9 * self.lag_loc
     
-    point_dir = self.points[0] - self.robot.loc
+    point_dir = self.points[0] - self._robot.loc
     target_rot = -math.atan2(point_dir[1], point_dir[0])
-    self.pid.set_target(move_to, target_rot)
-    actions = self.pid.run()
-    self.actions = actions
+    self.set_target(move_to, target_rot)
+    Actions = MoveTo.run(self, delta_time)
+    self.Actions = Actions
     self.move_to = move_to
-    return actions
+    return Actions
     
 '''
 forward support class. Gets open for ball controler and shot at the goal
 '''
 class striker(get_open):
-  def __init__(self, ball_controller, goal, enemies, allies):
+  def __init__(self, ball_controller, goal, enemies, allies, game):
     self.goal = goal
     self.ball_controller = ball_controller
     self.allies = allies
     self.enemies = enemies
-    get_open.__init__(self, [ball_controller.loc, goal], [1, 0.4], enemies, allies)
+    get_open.__init__(self, [ball_controller.loc, goal], [1, 0.4], enemies, allies, game)
     
-  def add(self, robot, game):
+  def add(self, robot):
     robot.task = 1
-    get_open.add(self, robot, game)
+    get_open.add(self, robot)
     
-  def run(self):
+  def run(self, delta_time):
     self.points[0] = self.ball_controller.loc
-    return get_open.run(self)
+    return get_open.run(self, delta_time)
     
 '''
 Rear support class. Gets open for ball_controller and anouther allied robot (currently one of the strikers
 '''
 class fielder(get_open):
-  def __init__(self, ball_controller, target_to_support, enemies, allies):
+  def __init__(self, ball_controller, target_to_support, enemies, allies, game):
     self.target_to_support = target_to_support
     self.ball_controller = ball_controller
     self.allies = allies
     self.enemies = enemies
-    get_open.__init__(self, [ball_controller.loc, target_to_support.loc], [1, 0.7], enemies, allies)
+    get_open.__init__(self, [ball_controller.loc, target_to_support.loc], [1, 0.7], enemies, allies, game)
     
-  def add(self, robot, game):
+  def add(self, robot):
     robot.task = 2
-    get_open.add(self, robot, game)
+    get_open.add(self, robot)
     
-  def run(self):
+  def run(self, delta_time):
     self.points[1] = self.target_to_support.loc
     self.points[0] = self.ball_controller.loc
-    return get_open.run(self)
+    return get_open.run(self, delta_time)
     
 '''
 rewraps get_open, but with dribble_ball instead of move_to for control and no darting around.
@@ -290,13 +288,13 @@ class get_open_with_ball(get_open):
     # do not dart because of bad positions. Darting causes us to drop the ball.
     self.freakout_weight = -10
     
-  def add(self, robot, game):
+  def add(self, robot):
     # setting the robot task is important so that dart doesn't trigger from being too close to a robot with the same task
     # ideally we would remove all dart checking, but I think this wrapper is neater 
     robot.task = 3
-    get_open.add(self, robot, game)
+    get_open.add(self, robot)
     
-  def run(self):
+  def run(self, delta_time):
     for i in range(len(self.support_robots)):
       self.points[i] = self.support_robots[i].loc
-    return get_open.run(self)
+    return get_open.run(self, delta_time)

@@ -1,23 +1,22 @@
 import numpy as np
 import sys
-from basic_skills.action import *
-from basic_skills.move_to import move_to
-from pysim.PySim_noise import *
 
-class Goalie(action):
+from basic_skills.action import *
+from basic_skills.move_to import MoveTo
+from pysim.PySim import *
+
+class Goalie(MoveTo):
   # Covers a pass from target_ball to target_loc
   # for goalie
   # identical to cover with "lead_target_robot" False
-  def __init__(self):
-    action.__init__(self)
+  def __init__(self, game):
+    MoveTo.__init__(self, game)
     self.goal = np.array([0,0])
-    self.pid = move_to()
     self.orbit = 1500
     
-  def add(self, robot, game):
-    action.add(self, robot, game)
-    move_to.add(self.pid, robot, game)
-    if self.robot.is_blue:
+  def add(self, robot):
+    Action.add(self, robot)
+    if self._robot.is_blue:
       self.goal = np.array([-6000,0])
     else:
       self.goal = np.array([6000,0])
@@ -33,7 +32,7 @@ class Goalie(action):
     #small number.
     return 1500000/(100 + dist)
   
-  def run(self):
+  def run(self, delta_time):
   
     adjustment = self.push_out_function(np.linalg.norm(self.game.ball.loc - self.goal))
     
@@ -49,13 +48,12 @@ class Goalie(action):
     if push_out_distance > np.linalg.norm(push_vec):
       push_out_distance = np.linalg.norm(push_vec) - 40
     move_to = self.goal + push_vec * push_out_distance / np.linalg.norm(push_vec)
-    point_dir = self.game.ball.loc - self.robot.loc
+    point_dir = self.game.ball.loc - self._robot.loc
     target_rot = -math.atan2(point_dir[1], point_dir[0])
     
     #bypass movement restrictions and set target location directly
-    self.pid.target_loc = move_to
-    self.pid.target_rot = target_rot
-    actions = self.pid.run()
+    self.set_target(move_to, target_rot)
+    actions = MoveTo.run(self, delta_time)
     self.actions = actions
     self.move_to = move_to
     return actions
