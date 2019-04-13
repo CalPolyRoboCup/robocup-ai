@@ -1,16 +1,17 @@
 import sys
 from basic_skills.orbit_ball import *
-from pysim.PySim_noise import *
+from pysim.PySim import *
 
 '''
 yellow robot moves back and forth while the blue robot orbits the ball to look at the yellow robot
 '''
 if __name__ == "__main__":
   game = PYsim(6)
-  orbit_action = orbit_ball(np.array([0,3000]))
-  move_action = move_to()
+  orbit_action = OrbitBall(game, np.array([0,3000]))
+  move_action = MoveTo(game)
   game.add_action(orbit_action, 0, True)
   game.add_action(move_action, 0, False)
+  print(game.blue_robots[0]._action, game.yellow_robots[0]._action)
   target_locs = [[-1000, 2000], [1000, -1000]]
   move_action.set_target(target_locs[0], 0)
   i = 0
@@ -24,10 +25,10 @@ if __name__ == "__main__":
         pygame.quit()
         sys.exit()
     
-    game.blue_robots[0].action.target_loc = game.yellow_robots[0].loc + game.yellow_robots[0].velocity
+    game.blue_robots[0]._action.target_loc = game.yellow_robots[0].loc + game.yellow_robots[0].velocity
         
     new_time = clock.tick()
-    if game.yellow_robots[0].action.done():
+    if game.yellow_robots[0]._action.done():
       if i == 0:
         i = 1
       else:

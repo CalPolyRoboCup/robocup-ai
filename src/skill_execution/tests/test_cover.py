@@ -1,14 +1,14 @@
 import sys
 
-from pysim.PySim_noise import *
+from pysim.PySim import *
 from skill_execution.cover import *
 
 
 game = PYsim(6)
 
-cover_action = cover(np.array([0,3000]), game.yellow_robots[0], 1, min_interpose_offset = 50)
-CR_action = cover_robots(game.blue_robots[0], game.yellow_robots[0])
-move_action = move_to()
+cover_action = Cover(game, np.array([0,3000]), game.yellow_robots[0], 1, min_interpose_offset = 50)
+CR_action = CoverRobots(game, game.blue_robots[0], game.yellow_robots[0])
+move_action = MoveTo(game)
 
 game.add_action(cover_action, 0, True)
 game.add_action(move_action, 0, False)
@@ -27,7 +27,7 @@ while 1:
       pygame.quit()
       sys.exit()
   new_time = clock.tick()
-  if game.yellow_robots[0].action.done():
+  if game.yellow_robots[0].get_action().done():
     if i == 0:
       i = 1
     else:

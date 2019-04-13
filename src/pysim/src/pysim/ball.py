@@ -12,7 +12,6 @@ class ball:
     self.spin = np.array([0,0], dtype = np.float64)
     self.controler = False
     self.last_controler = False
-    
   def update(self, nloc, obs, time_elapsed = 1.0/60, time_stamp = None):
     self.observed = obs
     if (((time_stamp == None) or (time_stamp != self.last_timestamp)) and 

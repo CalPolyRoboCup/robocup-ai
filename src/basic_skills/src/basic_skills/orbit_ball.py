@@ -1,21 +1,18 @@
-import numpy as np
-import math
 import sys
+
+from pysim.PySim import *
 from basic_skills.action import *
 from basic_skills.move_to import *
 from basic_skills.helper_functions import *
-from matplotlib.widgets import Slider, Button, RadioButtons
-from pysim.PySim_noise import *
+import numpy as np
+import math
 
 '''
 moves around the ball so that it faces target_loc
 '''
-class orbit_ball(action):
-  def __init__(self, target_loc = False, offset = 125):
-    action.__init__(self)
-    self.pid = move_to()
-    self.move_to = False
-    self.target_loc = target_loc
+class OrbitBall(MoveTo):
+  def __init__(self, game, target_loc = False, offset = 125):
+    super(OrbitBall, self).__init__(game)
     
     # how quickly the robot moves around the ball. Larger is slower
     self.spiral_factor = 0.35
@@ -36,12 +33,10 @@ class orbit_ball(action):
     # how far from the ball we try to get
     self.offset = offset
     
-  def add(self, robot, game):
-    self.robot = robot
-    self.pid.add(robot, game)
-    action.add(self, robot, game)
+  def add(self, robot):
+    MoveTo.add(self, robot)
     
-  def run(self):
+  def run(self, delta_time):
     '''
     we pull in to spiral_factor and rotate around by (1 - spiral_factor)
     we also push the target location out by speed_mod_factor if it is too close
@@ -50,7 +45,7 @@ class orbit_ball(action):
     
     # set target location to be closer to the ball
     ball_extrapolation = self.game.ball.loc + self.game.ball.velocity * self.extrapolation_factor
-    robot_vec = self.robot.loc - ball_extrapolation
+    robot_vec = self.get_robot().loc - ball_extrapolation
     robot_vec_scaled = robot_vec * self.offset / np.linalg.norm(robot_vec)
     target_loc = robot_vec_scaled * (1 - self.spiral_factor) + self.spiral_factor * robot_vec
     
@@ -64,19 +59,19 @@ class orbit_ball(action):
     orbit_vec = convert_local(target_loc, rotation_angle)
     
     # if we are close to the ball push target location out
-    move_to = orbit_vec + ball_extrapolation
-    speed_mod_vec = move_to - self.robot.loc
+    move_to_V = orbit_vec + ball_extrapolation
+    speed_mod_vec = move_to_V - self.get_robot().loc
     if np.linalg.norm(speed_mod_vec) < self.speed_mod_distance:
-      move_to = move_to + speed_mod_vec * abs(rotation_angle) * self.speed_mod_factor
+      move_to_V = move_to_V + speed_mod_vec * abs(rotation_angle) * self.speed_mod_factor
     
     # look a bit behind the ball so that as you orbit you are looking at the ball
     rot_vec = convert_local(target_loc, -rotation_angle) * self.rot_lead_factor
-    point_dir = (ball_extrapolation + rot_vec) - self.robot.loc
+    point_dir = (ball_extrapolation + rot_vec) - self.get_robot().loc
     target_rot = -math.atan2(point_dir[1], point_dir[0])
     
     # call pid code
-    self.pid.set_target(move_to, target_rot)
-    actions = self.pid.run()
+    self.set_target(move_to_V, target_rot)
+    actions = MoveTo.run(self, delta_time)
     self.actions = actions
-    self.moving_to = move_to
+    self.moving_to = move_to_V
     return actions

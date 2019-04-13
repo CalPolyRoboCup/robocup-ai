@@ -1,7 +1,7 @@
 import sys
 from basic_skills.action import *
-from basic_skills.move_to.move_to import *
-from pygame_simulator.PySim import *
+from basic_skills.move_to.MoveTo import *
+from pysim.PySim import *
 
 import threading
 import matplotlib.pyplot as plt
