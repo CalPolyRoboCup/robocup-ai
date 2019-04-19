@@ -16,7 +16,7 @@ class Player():
         self.our_team = []
         self.other_team = []
         self.ball = None
-        self.closest_robot = None
+        self.closest_robot_to_ball = None
         self.closest_dist_to_ball = 0xFFFFFFFFF
         
         for i in range(num_bots):
@@ -49,7 +49,7 @@ class Player():
             self.other_team[i].update_vals(data.poses[i+6].position, data.twists[i+6].linear, data.twists[i+6].angular)
 
             if(self.is_closest(data.poses[i].position)):
-                self.closest_robot = self.our_team[i]
+                self.closest_robot_to_ball = self.our_team[i]
                 
-        rospy.loginfo("closest robot: %d\t ball pos: %s" % (self.closest_robot.get_id(), self.ball))
+        rospy.loginfo("closest robot: %d\t ball pos: %s" % (self.closest_robot_to_ball.get_id(), self.ball))
         self.closest_dist_to_ball = 0xFFFFFFFF
