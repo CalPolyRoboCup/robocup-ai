@@ -10,8 +10,6 @@ from geometry_msgs.msg import Twist
 from robocup_msgs.msg import Position
 from robocup_msgs.msg import Strategy
 
-p = Player()
-
 def strat_callback(data):
     p.update_strategy(data)
 
@@ -30,6 +28,7 @@ def run():
 
 if __name__ == '__main__':
     try:
+        p = Player()
 	    run()
     except rospy.ROSInterruptException:
         pass
