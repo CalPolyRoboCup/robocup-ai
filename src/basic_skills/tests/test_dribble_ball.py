@@ -1,7 +1,10 @@
 import sys
-sys.path.insert(0, '../..')
-from basic_skills.dribble_ball.dribble_ball import dribble_ball
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname+'/../..')
+from basic_skills.source.dribble_ball import dribble_ball
 from pygame_simulator.PySim_noise import *
+from basic_skills.source.orbit_ball import *
 
 game = PYsim(6)
 dribble_action = dribble_ball(np.array([0,3000]))
@@ -31,7 +34,7 @@ while 1:
   # run the game and show target location
   new_time = clock.tick()
   if time != 1:
-    kp = [target_loc, (game.blue_robots[0].action.moving_to, -3)]
+    kp = [target_loc, dribble_action.pid.target_loc]
   else:
     kp = [target_loc]
   game.step(key_points = kp)

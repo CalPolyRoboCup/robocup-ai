@@ -1,11 +1,10 @@
 import sys
-sys.path.insert(0, '../..')
-from basic_skills.orbit_ball.orbit_ball import *
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname+'/../..')
+from basic_skills.source.orbit_ball import *
 from pygame_simulator.PySim_noise import *
 
-'''
-yellow robot moves back and forth while the blue robot orbits the ball to look at the yellow robot
-'''
 if __name__ == "__main__":
   game = PYsim(6)
   orbit_action = orbit_ball(np.array([0,3000]))
@@ -24,6 +23,15 @@ if __name__ == "__main__":
       if event.type == QUIT:
         pygame.quit()
         sys.exit()
+        
+      if event.type == MOUSEBUTTONDOWN:
+        pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
+        
+        # left mouse button
+        if pressed1:
+          print("high")
+          game.yellow_robots_internal[0].loc = game.convert_to_field_position(pygame.mouse.get_pos())
+          
     
     game.blue_robots[0].action.target_loc = game.yellow_robots[0].loc + game.yellow_robots[0].velocity
         

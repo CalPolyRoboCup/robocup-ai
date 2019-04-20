@@ -1,7 +1,9 @@
 import sys
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname+'/../..')
 import numpy as np
-sys.path.insert(0, '../..')
-from basic_skills.Goalie.Goalie import *
+from basic_skills.source.Goalie import *
 from pygame_simulator.PySim_noise import *
 
 if __name__ == "__main__":

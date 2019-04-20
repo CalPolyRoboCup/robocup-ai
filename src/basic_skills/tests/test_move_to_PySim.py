@@ -1,8 +1,10 @@
 import sys
-sys.path.insert(0, '/Users/nathan/Documents/robocup-ai/src')
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname+'/../..')
 
 from pygame_simulator.PySim_noise import *
-from basic_skills.move_to.move_to_collisions import *
+from basic_skills.source.move_to import *
 
 import threading
 import matplotlib.pyplot as plt
@@ -73,6 +75,9 @@ if __name__ == "__main__":
         if pressed1:
           print("high")
           game.blue_robots_internal[0].action.set_target(game.convert_to_field_position(pygame.mouse.get_pos()), 0)
+      if event.type == KEYDOWN or event.type == KEYUP:
+        keys = pygame.key.get_pressed()
+        key_action.keypress_update(keys)
     new_time = clock.tick()
     
     '''
@@ -87,6 +92,14 @@ if __name__ == "__main__":
       # game.blue_robots_internal[0].velocity = random_velocity
       # move_action.set_target(random_location, random_rotation)
       
+    if move_action.done():
+      random_location = np.random.uniform(-1, 1, size = [2])*np.array([3000, 2500])
+      random_velocity = np.random.uniform(-1, 1, size = [2])*np.array([500, 500])
+      random_rotation = np.random.uniform(-2*math.pi, 2*math.pi)
+      game.blue_robots_internal[0].loc = random_location
+      game.blue_robots_internal[0].rot = random_rotation
+      game.blue_robots_internal[0].velocity = random_velocity
+      #move_action.set_target(random_location, random_rotation)#np.array([0,0]), random_rotation)
     game.step()
     j += 1
     ttime = new_time

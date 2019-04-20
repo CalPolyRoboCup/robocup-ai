@@ -1,20 +1,19 @@
 import numpy as np
 import math
 import sys
-sys.path.insert(0, '../..')
-from basic_skills.action import *
-from basic_skills.move_to.move_to import *
-from basic_skills.helper_functions import *
+import os
+dirname = os.path.dirname(__file__)
+sys.path.insert(0, dirname+'/../..')
+from action import *
+from move_to import *
+from helper_functions import *
 
 
 class cover(action):
-
-  # used to lead robots bassed on the time it would take them to swivel to face target_loc
   robot_rotation_speed = 4.25
   
   # epsilon for small value comparisons
   EPS = 0.001
-  
   '''
   covers a pass from target_robot to target_loc
   '''
@@ -28,7 +27,7 @@ class cover(action):
     self.target_loc = target_loc
     self.target_robot = target_robot
     
-    # whether to take the target_robot's rotation into account 
+    #whether to take the target_robot's rotation into account 
     self.lead_target_robot = lead_target_robot
     
     # factor from 0 to 1 describing how the robot will position itself between the
@@ -52,7 +51,7 @@ class cover(action):
     still updated with references to the robot and game though
     '''
     self.robot = robot
-    self.pid.add(robot, game)
+    self.pid.robot = robot
     action.add(self, robot, game)
     
   def run(self):
@@ -66,34 +65,34 @@ class cover(action):
     weight so that we get to the ball faster
     '''
     
-    # get the position the ball will be shot from
+    #get the position the ball will be shot from
     shooting_pos = self.target_robot.loc
     if self.lead_target_robot:
       shooting_vec = self.target_loc - self.target_robot.loc
       delta_angle = abs(min_angle(self.target_robot.rot - math.atan2(shooting_vec[1], shooting_vec[0])))
       shooting_pos = shooting_pos + self.target_robot.velocity * delta_angle / cover.robot_rotation_speed
       
-    # Find the point that will put you between the shooting position and the ball the quickest
+    #Find the point that will put you between the shooting position and the ball the quickest
     quickest_loc = drop_perpendicular(self.robot.loc, shooting_pos, shooting_vec)
     
-    # if we are too close to the ball force a offset
+    #if we are too close to the ball force a offset
     if np.linalg.norm(shooting_vec) * self.interpose_factor < self.min_interpose_offset and np.linalg.norm(shooting_vec) > cover.EPS:
       interpose_loc = shooting_pos + shooting_vec * self.min_interpose_offset / np.linalg.norm(shooting_vec)
       
-    # otherwise get the point interpose_factor between the shooting position and the ball
+    #otherwise get the point interpose_factor between the shooting position and the ball
     else:
       interpose_loc = shooting_pos + shooting_vec * self.interpose_factor
       
-    # use our distance to the ball to average the two points (interpose_loc, quickest_loc) together
+    #use our distance to the ball to average the two points (interpose_loc, quickest_loc) together
     quickest_distance = np.linalg.norm(quickest_loc - self.robot.loc)
     move_to = ((quickest_loc * quickest_distance + interpose_loc * self.interpose_weight)
                   / (self.interpose_weight + quickest_distance))
     
-    # look at the ball
+    #look at the ball
     point_dir = self.target_robot.loc - self.robot.loc
     target_rot = -math.atan2(point_dir[1], point_dir[0])
     
-    # call PID
+    #call PID
     self.pid.set_target(move_to, target_rot)
     actions = self.pid.run()
     self.actions = actions
@@ -151,7 +150,7 @@ class cover_robots(action):
     weight so that we get to the ball faster
     '''
     
-    # get the position the ball will be shot from and too
+    #get the position the ball will be shot from and too
     shooting_pos = self.target_bot2.loc
     target_loc = self.target_bot1.loc
     shooting_vec = self.target_bot1.loc - self.target_bot2.loc
@@ -164,27 +163,27 @@ class cover_robots(action):
         delta_angle = abs(min_angle(self.target_bot2.rot - math.atan2(shooting_vec[1], shooting_vec[0])))
         shooting_pos = shooting_pos + self.target_bot2.velocity * delta_angle / cover_robots.robot_rotation_speed
       
-    # Find the point that will put you between the shooting position and the ball the quickest
+    #Find the point that will put you between the shooting position and the ball the quickest
     quickest_loc = drop_perpendicular(self.robot.loc, shooting_pos, shooting_vec)
     
-    # if we are too close to the ball force a offset
+    #if we are too close to the ball force a offset
     if np.linalg.norm(shooting_vec) * self.interpose_factor < self.min_interpose_offset and np.linalg.norm(shooting_vec) > cover_robots.EPS:
       interpose_loc = shooting_pos + shooting_vec * self.min_interpose_offset / np.linalg.norm(shooting_vec)
       
-    # otherwise get the point interpose_factor between the shooting position and the ball
+    #otherwise get the point interpose_factor between the shooting position and the ball
     else:
       interpose_loc = shooting_pos + shooting_vec * self.interpose_factor
       
-    # use our distance to the ball to average the two points (interpose_loc, quickest_loc) together
+    #use our distance to the ball to average the two points (interpose_loc, quickest_loc) together
     quickest_distance = np.linalg.norm(quickest_loc - self.robot.loc)
     move_to = ((quickest_loc * quickest_distance + interpose_loc * self.interpose_weight)
                   / (self.interpose_weight + quickest_distance))
     
-    # look at the ball
+    #look at the ball
     point_dir = self.target_bot1.loc - self.robot.loc
     target_rot = -math.atan2(point_dir[1], point_dir[0])
     
-    # call PID
+    #call PID
     self.pid.set_target(move_to, target_rot)
     actions = self.pid.run()
     self.actions = actions
