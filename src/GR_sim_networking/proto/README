@@ -1,2 +1,0 @@
-Install protoc
-protoc *.proto --python_out=.
