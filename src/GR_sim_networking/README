@@ -1,5 +1,0 @@
-install protobuf from https://github.com/protocolbuffers/protobuf/tree/master/python
-ensure protoc installed with
-  protoc --version
-build .proto files in proto directory
-change the path on line 3 of GR_interact.py to point to robocup-ai/src
