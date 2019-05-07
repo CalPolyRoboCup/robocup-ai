@@ -1,0 +1,2 @@
+from . import *
+__all__ = ["grSim_Commands_pb2", "grSim_Packet_pb2", "grSim_Replacement_pb2", "messages_robocup_ssl_detection_pb2", "messages_robocup_ssl_geometry_pb2", "messages_robotcup_ssl_refbox_log_pb2", "messages_robocup_ssl_wrapper_pb2", "referee_pb2", "savestate_pb2"]
