@@ -1,0 +1,3 @@
+'''
+GUI for plotting data
+'''

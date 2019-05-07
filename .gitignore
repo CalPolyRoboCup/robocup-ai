@@ -2,3 +2,4 @@ build
 devel
 *.pyc
 ros_dev
+*.swp
