@@ -1,7 +1,7 @@
-from setup_widget import SetupWidget
+from robocup_master.setup_widget import SetupWidget
 from PyQt4.QtGui import QPainter, QPen
 from PyQt4.QtCore import Qt, QPointF
-from config_data import Path, Pose
+from robocup_master.config_data import Path, Pose
 
 class TrajWidget(SetupWidget):
     def __init__(self):

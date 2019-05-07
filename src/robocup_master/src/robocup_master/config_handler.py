@@ -1,7 +1,7 @@
 '''
 Handles reading and writing metadata to and from xml
 '''
-from config_data import Path, Pose, Config, Robot, Ball
+from robocup_master.config_data import Path, Pose, Config, Robot, Ball
 import xml.etree.ElementTree as ET
 from PyQt4.QtCore import Qt
 

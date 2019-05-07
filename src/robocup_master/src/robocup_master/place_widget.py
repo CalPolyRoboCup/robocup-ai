@@ -1,8 +1,8 @@
-from setup_widget import SetupWidget
-from config_data import Robot, Ball
+from robocup_master.setup_widget import SetupWidget
+from robocup_master.config_data import Robot, Ball
 from PyQt4.QtGui import QPainter, QPen, QColor
 from PyQt4.QtCore import Qt
-from config_data import Config
+from robocup_master.config_data import Config
 
 class PlaceWidget(SetupWidget):
     def __init__(self):
@@ -10,7 +10,7 @@ class PlaceWidget(SetupWidget):
         self.config = Config()
         self.checked_btn = -1
         self.robot_color = 0
-        self.max_robots = 10
+        self.max_robots = 6
 
     def paintEvent(self, e):
         painter = QPainter(self)

@@ -1,10 +1,10 @@
 import sys
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-from config_data import Config, Path
-from config_handler import read_trajectory, write_trajectory, read_placement, write_placement
-from config_widget import ConfigWidget
-from traj_widget import TrajWidget
+from robocup_master.config_data import Config, Path
+from robocup_master.config_handler import read_trajectory, write_trajectory, read_placement, write_placement
+from robocup_master.config_widget import ConfigWidget
+from robocup_master.traj_widget import TrajWidget
 
 file_filters = {'new': 'Placement file (*.place);;Trajectory file (*.traj)', 'place': 'Placement file (*.place)', 'traj': 'Trajectory file (*.traj)'}
 
