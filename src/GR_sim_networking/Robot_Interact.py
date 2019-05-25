@@ -4,7 +4,7 @@ dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname+'/..')
 sys.path.insert(0, dirname)
 sys.path.insert(0, dirname + "/proto")
-from basic_skills.src.robot import *
+from basic_skills.source.robot import *
 
 #for vector math
 import numpy as np
