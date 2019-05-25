@@ -57,6 +57,10 @@ COMMAND_PORT = 20011
     
 class GRsim:
   def __init__(self, max_bots_per_team):
+    # robot and ball radii
+    self.robot_radius = 90
+    self.ball_radius = 2
+    
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # on this port, listen ONLY to MCAST_GRP
