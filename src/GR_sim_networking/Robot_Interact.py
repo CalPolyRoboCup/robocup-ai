@@ -61,9 +61,16 @@ COMMAND_PORT = 20011
     
 class RRsim:
   def __init__(self, max_bots_per_team):
+<<<<<<< HEAD
     self.ball_radius = 2
     self.robot_radius = 90
       
+=======
+    # robot and ball radii
+    self.robot_radius = 90
+    self.ball_radius = 2
+    
+>>>>>>> dc0d8bafc1ee0c3199dc1e13d560470b2d28ca52
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # on this port, listen ONLY to MCAST_GRP
