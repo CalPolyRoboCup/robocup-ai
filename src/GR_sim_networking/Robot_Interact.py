@@ -164,6 +164,18 @@ class GRsim:
         pygame.draw.circle(self.screen, (155,155,0), (int(kp[0]), int(kp[1])), int(self.ball_radius*self.screen_res[0]/self.field_dims[0])*4)
     
   
+  def add_action(self, action, index, is_blue):
+    '''
+    brief: use this method to add actions to robots so that internal and external objects are kept up to date
+    params: action - action to add
+            index - the index of the bot to add action to
+            is_blue - whether the bot to add action to is on the blue team
+    '''
+    if is_blue:
+      self.blue_robots[index].add_action(action)
+    else:
+      self.yellow_robots[index].add_action(action)
+  
   
   #advance simulation first take
   #this function does not agree with current action architecture
