@@ -6,7 +6,8 @@ import numpy as np
 import time
 
 class robot:
-  def __init__(self, is_blue, idNum, game):
+  def __init__(self, is_blue, idNum, game, command_ip = '224.5.23.3',
+          command_port = 10021):
     """Initializes a robot object is_blue - boolean idNum - int game - grsim"""
     self.game = game
     self.loc = np.array([0,0])
@@ -17,6 +18,10 @@ class robot:
     self.is_blue = is_blue
     self.id = idNum
     self.last_time = time.time()
+
+    self.command_ip = command_ip
+    self.command_port = 10021
+
     #I don't want to make a RNN because it slows down training
     #I want to use a low pass running average filter to get 
     #velocity and feed it to a linear model maybe convolutional 

@@ -1,10 +1,13 @@
 import os
 import sys
-dirname = os.path.dirname(__file__)
+dirname = os.path.abspath(__file__)
+sys.path.insert(0, 'proto')
+sys.path.insert(0, '..')
 sys.path.insert(0, dirname+'/..')
 sys.path.insert(0, dirname)
 sys.path.insert(0, dirname + "/proto")
-from basic_skills.source.robot import *
+print(sys.path)
+from basic_skills.robot import *
 
 #for vector math
 import numpy as np
@@ -27,6 +30,7 @@ import messages_robocup_ssl_detection_pb2 as messages_robocup_ssl_detection_pb2
 import messages_robocup_ssl_wrapper_pb2 as messages_robocup_ssl_wrapper_pb2
 import referee_pb2 as referee_pb2
 
+from ball import *
 from motor_conversions import get_motor_speeds
 
 '''
@@ -55,8 +59,11 @@ MCAST_PORT = 10020
 COMMAND_GRP = "127.0.0.1"
 COMMAND_PORT = 20011
     
-class GRsim:
+class RRsim:
   def __init__(self, max_bots_per_team):
+    self.ball_radius = 2
+    self.robot_radius = 90
+      
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # on this port, listen ONLY to MCAST_GRP
@@ -277,15 +284,3 @@ class GRsim:
     for i in range(self.max_bots_per_team):
       if not yellow_observed[i]:
         self.yellow_robots[i].update(np.array([0,0]), 0, 0)
-
-#simple test code 
-if __name__ == "__main__":
-  max_bots_per_team = 8
-  game = GRsim(max_bots_per_team)
-  for i in game.blue_robots:
-    i.add_action(sample_action())
-  for j in range(10000):
-    game.step()
-    if j%200 == 0:
-      game.display()
-    
