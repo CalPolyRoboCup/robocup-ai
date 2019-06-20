@@ -3,53 +3,59 @@ import os
 dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname)
 from state_machine import state
+from strategy_numbers import *
 
 dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname+'/..')
-from basic_skills.source.Ball_Interception import *
-from basic_skills.source.pass_to import *
+from basic_skills.source.InterceptBall import InterceptBall
+from basic_skills.source.GetOpen import Fielder
+from basic_skills.source.Goalie import Goalie
+
 
 #assigns actions to roots while the ball is being passed by this team
 class passing_strategy(state):
-  def __init__(self, id, neutral_id, offensive_id, defensive_id, team):
-    state.__init__(self, id)
-    self.offensive_id = offensive_id
-    self.neutral_id = neutral_id
-    self.defensive_id = defensive_id
-    self.team = team
-    
-    self.pass_timeout_time = 500
-    self.pass_timeout = 0
-  def setup(self):
-    print("pass to", self.team.pass_action.target_robot.id)
-    
-    if self.team.pass_action.target_robot.id != -1:
-      self.team.game.add_action(self.team.intercept_action,  self.team.pass_action.target_robot.id, self.team.is_blue)
-      
-    self.team.fielder_actions[2].target_to_support = self.team.pass_action.target_robot
-    self.team.game.add_action(self.team.fielder_actions[2], self.team.ball_controler, self.team.is_blue)
-    
-    self.pass_timeout = self.pass_timeout_time
-  def update(self):
-    #on entering state assign the robot to receive pass to intercept_ball and the robot that just passed to fielder
-      
-    self.pass_timeout -= 1
-      
-    #state machine transitions
-    if self.team.game.ball.controler != False:
-      
-      #if they have the ball under a robots control
-      if self.team.game.ball.controler.is_blue != self.team.is_blue:
-        print("interception")
-        return self.defensive_id
-        
-      #if we have the ball under a robots control
-      if self.team.game.ball.controler.is_blue == self.team.is_blue and self.team.game.ball.controler.id != self.team.ball_controler:
-        self.team.ball_controler = self.team.game.ball.controler.id
-        print("recieved", self.team.ball_controler)
-        return self.offensive_id
-        
-    if self.pass_timeout == 0:
-      return self.neutral_id
-      
-    return self.id
+    state_number = 3
+    def __init__(self, id, team):
+        state.__init__(self, id)
+        self.team = team
+
+        self.pass_timeout_time = 500
+        self.pass_timeout = 0
+        self.min_pass_time = 11
+
+    def setup(self):
+        reciever_id = self.team.pass_action.target_robot.id
+        print("pass to", reciever_id)
+
+        self.team.game.add_action(self.team.intercept_action,
+                reciever_id, self.team.is_blue)
+
+        if self.team.ball_controler.id == self.team.goalie.id:
+            self.team.game.add_action(Goalie(), self.team.ball_controler.id, self.team.is_blue)
+        else:
+            fielder_action = Fielder(self.team.goalie, self.team.allies[reciever_id], 
+                                    self.team.blocker_enemies, self.team.allies)
+            self.team.game.add_action(fielder_action, self.team.ball_controler.id, self.team.is_blue)
+
+        self.pass_timeout = 0
+
+    def update(self):
+        self.pass_timeout += 1
+            
+        if self.team.ball_controler != -1:
+            
+            # if they have the ball
+            if self.team.ball_controler.is_blue != self.team.is_blue:
+                print("interception")
+                return DEFENSIVE_STRATEGY_STATE_NUMBER
+                
+            # if we have the ball
+            if (self.team.ball_controler.is_blue == self.team.is_blue and 
+                    self.pass_timeout > self.min_pass_time):
+                print("recieved", self.team.ball_controler.id)
+                return OFFENSIVE_STRATEGY_STATE_NUMBER
+                
+        if self.pass_timeout == self.pass_timeout_time:
+            return NEUTRAL_STRATEGY_STATE_NUMBER
+            
+        return PASSING_STRATEGY_STATE_NUMBER

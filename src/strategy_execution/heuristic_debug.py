@@ -7,44 +7,20 @@ import pygame
 
 dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname)
-from neutral_strategy import neutral_strategy
-from offensive_strategy import offensive_strategy
-from defensive_strategy import defensive_strategy
-from passing_strategy import passing_strategy
-from strategy_numbers import *
-from state_machine import state_machine
 from strategy_helpers import team
+from evaluate_robots import evaluate_robots
 
 sys.path.insert(0, dirname+'/..')
 from pygame_simulator.PySim_noise import PYsim
-from basic_skills.source.Goalie import Goalie
-
-
-
-class strategy:
-    def __init__(self, game, is_blue):
-        self.team = team(game, is_blue)
-        self.neutral = neutral_strategy(NEUTRAL_STRATEGY_STATE_NUMBER, self.team)
-        self.defense = defensive_strategy(DEFENSIVE_STRATEGY_STATE_NUMBER, self.team)
-        self.offense = offensive_strategy(OFFENSIVE_STRATEGY_STATE_NUMBER, self.team)
-        self.passing = passing_strategy(PASSING_STRATEGY_STATE_NUMBER, self.team)
-        self.state_machine = state_machine([self.neutral, self.defense, self.offense, self.passing])
-
-        self.reset()
-
-    def update(self):
-        self.team.update()
-        self.state_machine.run()
-
-    def reset(self):
-        self.team.game.add_action(Goalie(), self.team.goalie.id, self.team.is_blue)
-        self.state_machine.reset()
+from basic_skills.source.helper_functions import angle_to
 
 if __name__ == "__main__":
     game = PYsim(6)
 
-    blue_strategy = strategy(game, is_blue=True)
-    yellow_strategy = strategy(game, is_blue=False)
+    blue_team = team(game, is_blue=True)
+    yellow_team = team(game, is_blue=False)
+    yellow_team.ball_controler = blue_team.enemies[0]
+    best_reciever_index = None
 
     clock = pygame.time.Clock()
     clock.tick(60)
@@ -53,15 +29,9 @@ if __name__ == "__main__":
     select_id = 0
     select_blue = True
     while 1:
-        _, _, done = game.step(key_points=yellow_strategy.team.prints)
+        _, _, done = game.step(key_points=yellow_team.prints)
 
-        # reset strategy when game ends
-        if done:
-            blue_strategy.reset()
-            yellow_strategy.reset()
-
-        blue_strategy.update()
-        yellow_strategy.update()
+        values, best_reciever_index = evaluate_robots(yellow_team, best_reciever_index)
 
         '''
         select teams with Y key (yellow)
@@ -106,3 +76,12 @@ if __name__ == "__main__":
                     else:
                         game.yellow_robots_internal[select_id].loc = mouse_pos
 
+                if pressed3:
+                    mouse_pos = pygame.mouse.get_pos()
+                    mouse_pos = game.convert_to_field_position(mouse_pos)
+                    if select_blue:
+                        mouse_angle = angle_to(mouse_pos, game.blue_robots_internal[select_id].loc)
+                        game.blue_robots_internal[select_id].rot = mouse_angle
+                    else:
+                        mouse_angle = angle_to(mouse_pos, game.yellow_robots_internal[select_id].loc)
+                        game.yellow_robots_internal[select_id].rot = mouse_angle

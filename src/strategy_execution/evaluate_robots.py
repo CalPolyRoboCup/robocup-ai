@@ -5,95 +5,110 @@ import sys
 import os
 
 dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname+'/..')
+sys.path.insert(0, dirname)
 from worst_intercept import worst_intercept
-from strategy_helpers import *   
-  
-  
+from strategy_helpers import get_cell
+
+sys.path.insert(0, dirname+'/..')
+from basic_skills.source.helper_functions import mag, squash, angle_to, min_angle
+    
+    
 '''
 brief - runs a heuristic to determine the advantage of making a pass to each robot on the team
-        HEURISTIC COMPNONENTS
-          sticky_value - constant given to the robot with the highest score on the last 
-                         cycle (adding a facing component to the passability metric probably 
-                         makes this irrelevant)
-          shot_value - weighting for ability to make a shot on the enemy goal
-          intercept_clip - maximum interception range of an enemy
-          value_propagation_rate - all robots gain value proportional to this factor times
-                                   the value of other robots it can pass to (the can pass
-                                   metric is non binary)
-          enemy fear_value - penalizes positions that are close to an enemy even if the enemy
-                             isn't blocking key shots
-          down_field_value - value derived from being close to the enemy goal
-          controler_value - value given to the robot that controls the ball. Ment to serve as
-                            a threshold for the shot
+    HEURISTIC COMPNONENTS
+        shot_value              - value given to robots for being able to shoot at the enemy goal
+        enemy fear_value        - value given for being far from enemies
+        down_field_value        - value given for being down field
+        controler_value         - constant given to the ball controler. Serves as a passing threshold.
+        cell_value              - value for being in a given cell of the field
+
 params - team - team object. Specifies allies to evaluate and enemies to consider as blockers
-         best_reciever_index - the index of the best robot to pass to in the last time step
-                               used for sticky value
+                 best_reciever_index - the index of the best robot to pass to in the last time step
+                                                             used for sticky value
 returns - values : heuristic estimates of the value of a pass to each robot in team 
-          best_reciever_index : index of the robot with the highest score (in above vector)
-                                except the ball_controler
+                    best_reciever_index : index of the robot with the highest score (in above vector)
+                                                                except the ball_controler
 '''
 def evaluate_robots(team, best_reciever_index):
-  #stime = time.time()
+    #stime = time.time()
 
-  sticky_value = 30
-  shot_value = 500
-  intercept_clip = 200
-  value_propagation_rate = 0.3
-  inate_value = 200
-  enemy_fear_value = 600
-  enemy_fear_radius = 1000
-  down_field_value_weight = 0.001
-  controler_value = 40
+    shot_value = 1500
+    alignment_weight = 0.2
+    enemy_fear_value_factor = 500
+    enemy_fear_radius = 600
+    down_field_value_weight = 0.05
+    controler_value = 100
 
-  #temp support for cell values
-  cell_values = [0,10,0,10,0,20,40,60,40,20,10,20,30,20,10,5,10,15,10,5]   
+    value_propagation_rate = 0.5
 
-  raw_values = []
-  for r in team.allies:        
-    worst, _, _ = worst_intercept(r.loc, team.their_goal, team.blocker_enemies + [e.loc for e in team.enemies])
-    shot_likelyhood = squash(worst, intercept_clip)
-    cell_value = cell_values[get_cell(r.loc) - 1]
-    down_field_value = r.loc[0] * down_field_value_weight * (1 if team.is_blue else -1)
-    sticky_value = sticky_value if (r.id == best_reciever_index) else 0
-    fear_value = 0
-    for e in team.enemies:
-      dist = np.linalg.norm(e.loc - r.loc)
-      fear_value = enemy_fear_value * (1 - squash(dist, enemy_fear_radius))
-      
-    if r.id == team.ball_controler:
-      controler_value = controler_value
-    else:
-      controler_value = 0
-      
-    raw_values.append(shot_likelyhood * shot_value + cell_value + sticky_value + down_field_value + inate_value + controler_value - fear_value)
-   
-  highest_value_reciever = -1000
-  values = [v for v in raw_values]
-  for r in team.allies:
-    worst, _, _ = worst_intercept(team.game.ball.loc, r.loc, team.blocker_enemies + [e.loc for e in team.enemies])
-    pass_likelyhood = squash(worst, intercept_clip)
-    for other in team.allies:
-      if other.id != r.id:
-        worst, _, _ = worst_intercept(r.loc, other.loc, team.blocker_enemies)
-        secondary_pass_likelyhood = squash(worst, intercept_clip)
-        values[r.id] += value_propagation_rate * raw_values[other.id] * secondary_pass_likelyhood
+    # TODO: temp values. intended for yellow team
+    cell_values = [0,10,0,10,0,         # enemy goal
+                  20,40,60,40,20,
+                  10,20,30,20,10,
+                  5,10,15,10,5]         # our goal
+
+    # assign values to having each robot control the ball
+    raw_values = []
+    for r in team.allies:                
+        worst, _ = worst_intercept(r.loc, team.enemy_goal, team.blocker_enemies)
+        pass_angle = abs(min_angle(angle_to(team.enemy_goal, r.loc) - r.rot))
+        alignment_factor = (1 - squash(pass_angle, np.pi)) * alignment_weight + 1 - alignment_weight
+        shot_likelyhood = interpret_intercept(worst) * alignment_factor
+        cell_value = cell_values[get_cell(r.loc) - 1]
+        down_field_value = r.loc[0] * down_field_value_weight * (1 if team.is_blue else -1)
+        fear_value = enemy_fear_value_factor
+        for e in team.enemies:
+            dist = mag(e.loc - r.loc)
+            fv = enemy_fear_value_factor * squash(dist, enemy_fear_radius)
+            if fv < fear_value:
+                fear_value = fv
+            
+        controler_value = controler_value if r.id == team.ball_controler else 0
+            
+        '''if r.id == 1:
+            print(shot_likelyhood * shot_value, cell_value,
+                        sticky_value, down_field_value,
+                        controler_value, fear_value)
+        '''
+        raw_values.append(shot_likelyhood * shot_value + cell_value +
+                        down_field_value + controler_value + fear_value)
+     
+    # share values between connected allies. Will boost the value of
+    # robots with passes to other robots, but not isolated robots.
+    highest_value_reciever = -1000 #very negative number
+    values = [v for v in raw_values]
+    for r in team.allies:
+        worst, _ = worst_intercept(team.game.ball.loc, r.loc, team.blocker_enemies)
+        pass_angle = abs(min_angle(angle_to(r.loc, team.game.ball.loc) - team.ball_controler.rot))
+        alignment_factor = (1 - squash(pass_angle, np.pi)) * alignment_weight + 1 - alignment_weight
+        pass_likelyhood = interpret_intercept(worst) * alignment_factor
+        for other in team.allies:
+            if other.id != r.id:
+                worst, _ = worst_intercept(r.loc, other.loc, team.blocker_enemies)
+                pass_angle = abs(min_angle(angle_to(other.loc, r.loc) - r.rot))
+                alignment_factor = (1 - squash(pass_angle, np.pi)) * alignment_weight + 1 - alignment_weight
+                secondary_pass_likelyhood = interpret_intercept(worst) * alignment_factor
+                values[r.id] += value_propagation_rate * raw_values[other.id] * secondary_pass_likelyhood
+                
+        # print(r.id, pass_likelyhood, pass_angle, angle_to(r.loc, team.game.ball.loc), team.ball_controler.rot)
         
-    values[r.id] *= pass_likelyhood
+        values[r.id] *= pass_likelyhood
+        
+        if highest_value_reciever < values[r.id] and r.id != team.ball_controler:
+            highest_value_reciever = values[r.id]
+            best_reciever_index = r.id
     
-    if highest_value_reciever < values[r.id] and r.id != team.ball_controler:
-      highest_value_reciever = values[r.id]
-      best_reciever_index = r.id
-  
-  #update prints for debugging
-  '''print(raw_values)
-  print(values)
-  print()'''
-  team.prints = []
-  for v, a in zip(values, team.allies):
-    if v == max(values):
-      team.prints.append((a.loc, -v/100));
-    else:
-      team.prints.append((a.loc, v/100));
-  #print(time.time() - stime)
-  return values, best_reciever_index
+    # debugging
+    team.prints = []
+    for v, a in zip(values, team.allies):
+        if v == max(values):
+            team.prints.append((a.loc, -v/150))
+        else:
+            team.prints.append((a.loc, v/150))
+
+    return values, best_reciever_index
+
+def interpret_intercept(worst, shot_margin = 1000):
+    if worst is None:
+        return 1
+    return squash(abs(worst), shot_margin)
