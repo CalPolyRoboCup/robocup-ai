@@ -1,14 +1,17 @@
 import sys
 import os
+import pygame
+import numpy as np
 dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname+'/../..')
-from basic_skills.source.orbit_ball import *
-from pygame_simulator.PySim_noise import *
+from basic_skills.source.OrbitBall import OrbitBall
+from basic_skills.source.MoveTo import MoveTo
+from pygame_simulator.PySim_noise import PYsim
 
 if __name__ == "__main__":
   game = PYsim(6)
-  orbit_action = orbit_ball(np.array([0,3000]))
-  move_action = move_to()
+  orbit_action = OrbitBall(np.array([0,3000]))
+  move_action = MoveTo()
   game.add_action(orbit_action, 0, True)
   game.add_action(move_action, 0, False)
   target_locs = [[-1000, 2000], [1000, -1000]]
@@ -20,17 +23,22 @@ if __name__ == "__main__":
   ttime = clock.tick()
   while 1:
     for event in pygame.event.get():
-      if event.type == QUIT:
+      if event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
         
-      if event.type == MOUSEBUTTONDOWN:
+      if event.type == pygame.MOUSEBUTTONDOWN:
         pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
-        
-        # left mouse button
+        mouse_pos = game.convert_to_field_position(pygame.mouse.get_pos())
+
+        # place ball with left mouse
         if pressed1:
-          print("high")
-          game.yellow_robots_internal[0].loc = game.convert_to_field_position(pygame.mouse.get_pos())
+          game.ball_internal.loc = mouse_pos
+          game.ball_internal.velocity = np.array([0,0])
+          
+        # throw ball with right mouse
+        if pressed3:
+          move_action.set_target(mouse_pos, 0)
           
     
     game.blue_robots[0].action.target_loc = game.yellow_robots[0].loc + game.yellow_robots[0].velocity
