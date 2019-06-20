@@ -1,2 +1,5 @@
 build
 devel
+*/__pycache__
+*.pyc
+*/CMakeLists.txt
