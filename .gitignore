@@ -1,6 +1,6 @@
 build
 devel
-*/__pycache__
+*__pycache__/
 *.pyc
 */CMakeLists.txt
 */package.xml
