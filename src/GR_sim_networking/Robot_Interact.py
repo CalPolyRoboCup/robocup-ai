@@ -1,10 +1,16 @@
 import os
 import sys
-dirname = os.path.dirname(__file__)
+import math
+dirname = os.path.abspath(__file__)
+sys.path.insert(0, 'proto')
+sys.path.insert(0, '..')
 sys.path.insert(0, dirname+'/..')
 sys.path.insert(0, dirname)
 sys.path.insert(0, dirname + "/proto")
-from basic_skills.source.robot import *
+print(sys.path)
+from basic_skills.source.robot import robot
+from basic_skills.source.ball import ball
+from pygame_simulator.test_PySim_noise import keyboard_control
 
 #for vector math
 import numpy as np
@@ -54,12 +60,11 @@ MCAST_PORT = 10020
 
 COMMAND_GRP = "127.0.0.1"
 COMMAND_PORT = 20011
-        
-class GRsim:
+    
+class RRsim:
     def __init__(self, max_bots_per_team):
-        # robot and ball radii
-        self.robot_radius = 90
         self.ball_radius = 2
+        self.robot_radius = 90
         
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -76,7 +81,7 @@ class GRsim:
         
         
         pygame.font.init() # you have to call this at the start, 
-                                     # if you want to use this module.
+                    # if you want to use this module.
         self.font = pygame.font.SysFont('Comic Sans MS', 20)
         pygame.display.set_caption('Pysim')
 
@@ -136,19 +141,19 @@ class GRsim:
         render the game
         '''
         self.screen.blit(self.field_image,(0,0))
-        for br in self.blue_robots_internal:
+        for br in self.blue_robots:
             rot_image = pygame.transform.rotate(self.blue_robot_image , math.degrees(br.rot))
             position = self.convert_to_screen_position(br.loc, rot_image.get_rect().size)
             num = self.font.render(str(br.id), False, (0,0,0))
             self.screen.blit(num, position)
             self.screen.blit(rot_image, position)
-        for yr in self.yellow_robots_internal:
+        for yr in self.yellow_robots:
             rot_image = pygame.transform.rotate(self.yellow_robot_image , math.degrees(yr.rot))
             position = self.convert_to_screen_position(yr.loc, rot_image.get_rect().size)
             num = self.font.render(str(yr.id), False, (0,0,0))
             self.screen.blit(num, position)
             self.screen.blit(rot_image, position)
-        position = self.convert_to_screen_position(self.ball_internal.loc)
+        position = self.convert_to_screen_position(self.ball.loc)
         pygame.draw.circle(self.screen, (255,55,0), (int(position[0]), int(position[1])), int(self.ball_radius*self.screen_res[0]/self.field_dims[0]))
         
     def render_key_points(self, key_points):
@@ -232,18 +237,18 @@ class GRsim:
         packet.commands.timestamp = time.time()
         packet.commands.isteamyellow = not robot.is_blue
         comm = bytearray()
-        motor_speeds = get_motor_speeds(action[2], action[3], action[4])
+        motor_speeds = get_motor_speeds(actions[2], actions[3], actions[4])
         for motor_s in motor_speeds:
             comm += (motor_s).to_bytes(2, byteorder='big')
-        if action[0]:
+        if actions[0]:
             comm += b'1'
         else:
             comm += b'0'
-        comm += action[6].to_bytes(2, byteorder='big')
+        comm += actions[6].to_bytes(2, byteorder='big')
         return comm
     #reads the 4 cammera updates. Ignores geometry packets
     def sync_with_sim(self):    
-        for i in range(4):        
+        for _ in range(4):        
             data = self.sock.recv(1024)
             packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
             try:
@@ -285,11 +290,10 @@ class GRsim:
 #simple test code 
 if __name__ == "__main__":
     max_bots_per_team = 8
-    game = GRsim(max_bots_per_team)
+    game = RRsim(max_bots_per_team)
     for i in game.blue_robots:
-        i.add_action(sample_action())
+        i.add_action(keyboard_control())
     for j in range(10000):
         game.step()
-        if j%200 == 0:
-            game.display()
+        game.draw()
         
