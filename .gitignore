@@ -3,3 +3,5 @@ devel
 */__pycache__
 *.pyc
 */CMakeLists.txt
+*/package.xml
+*_pb2.py
