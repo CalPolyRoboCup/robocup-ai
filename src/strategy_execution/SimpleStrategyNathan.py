@@ -45,6 +45,8 @@ if __name__ == "__main__":
 
     blue_strategy = strategy(game, is_blue=True)
     yellow_strategy = strategy(game, is_blue=False)
+    blue_strategy.reset()
+    yellow_strategy.reset()
 
     clock = pygame.time.Clock()
     clock.tick(60)
@@ -53,7 +55,7 @@ if __name__ == "__main__":
     select_id = 0
     select_blue = True
     while 1:
-        _, _, done = game.step(key_points=yellow_strategy.team.prints)
+        _, _, done = game.step()#key_points=yellow_strategy.team.prints)
 
         # reset strategy when game ends
         if done:
@@ -78,6 +80,7 @@ if __name__ == "__main__":
                 # press r-key to reset
                 if keys[pygame.K_r]:
                     game.reset()
+                    yellow_strategy.reset()
                     yellow_strategy.reset()
                 if keys[pygame.K_1]:
                     select_id = 1

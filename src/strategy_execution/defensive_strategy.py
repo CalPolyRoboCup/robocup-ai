@@ -4,7 +4,6 @@ import numpy as np
 dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname)
 from state_machine import state
-from strategy_helpers import get_closest
 
 dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname)
@@ -12,7 +11,7 @@ from strategy_numbers import *
 
 sys.path.insert(0, dirname+'/..')
 from basic_skills.source.cover import cover
-from basic_skills.source.helper_functions import mag
+from basic_skills.source.helper_functions import get_closest, mag
 
 class defensive_strategy(state):
     # assigns actions to robots when the enemy has the ball  
@@ -22,7 +21,7 @@ class defensive_strategy(state):
         self.team = team
 
     def setup(self):
-        print("defend")
+        #print("defend", "blue" if self.team.is_blue else "yellow")
         free_allies = [a for a in self.team.field_players]
         open_enemies = [e for e in self.team.enemies]
         
@@ -42,10 +41,10 @@ class defensive_strategy(state):
 
     def update(self):
         # state machine transition 
-        if self.team.ball_controler != -1 and self.team.ball_controler.is_blue == self.team.is_blue:
+        if self.team.ball_controler is not None and self.team.ball_controler.is_blue == self.team.is_blue:
             return OFFENSIVE_STRATEGY_STATE_NUMBER
             
-        elif self.team.ball_controler == -1:
+        elif self.team.ball_controler is None:
             return NEUTRAL_STRATEGY_STATE_NUMBER
             
         return DEFENSIVE_STRATEGY_STATE_NUMBER

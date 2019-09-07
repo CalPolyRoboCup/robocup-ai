@@ -10,7 +10,8 @@ from worst_intercept import worst_intercept
 from strategy_helpers import get_cell
 
 sys.path.insert(0, dirname+'/..')
-from basic_skills.source.helper_functions import mag, squash, angle_to, min_angle
+from basic_skills.source.helper_functions import mag, squash, angle_to, min_angle, dist
+from basic_skills.source.PassTo import LEAD_FACTOR
     
     
 '''
@@ -37,7 +38,10 @@ def evaluate_robots(team, best_reciever_index):
     enemy_fear_value_factor = 500
     enemy_fear_radius = 600
     down_field_value_weight = 0.05
-    controler_value = 100
+    controler_value = 500
+    stand_off_value = 300
+    min_pass_margin = 400
+    stand_off_radius = 700
 
     value_propagation_rate = 0.5
 
@@ -49,8 +53,9 @@ def evaluate_robots(team, best_reciever_index):
 
     # assign values to having each robot control the ball
     raw_values = []
-    for r in team.allies:                
-        worst, _ = worst_intercept(r.loc, team.enemy_goal, team.blocker_enemies)
+    for r in team.allies:
+        extrapolated_position = r.loc + r.velocity * LEAD_FACTOR
+        worst, _ = worst_intercept(extrapolated_position, team.enemy_goal, team.blocker_enemies)
         pass_angle = abs(min_angle(angle_to(team.enemy_goal, r.loc) - r.rot))
         alignment_factor = (1 - squash(pass_angle, np.pi)) * alignment_weight + 1 - alignment_weight
         shot_likelyhood = interpret_intercept(worst) * alignment_factor
@@ -58,12 +63,13 @@ def evaluate_robots(team, best_reciever_index):
         down_field_value = r.loc[0] * down_field_value_weight * (1 if team.is_blue else -1)
         fear_value = enemy_fear_value_factor
         for e in team.enemies:
-            dist = mag(e.loc - r.loc)
-            fv = enemy_fear_value_factor * squash(dist, enemy_fear_radius)
+            edist = mag(e.loc - r.loc)
+            fv = enemy_fear_value_factor * squash(edist, enemy_fear_radius)
             if fv < fear_value:
                 fear_value = fv
             
         controler_value = controler_value if r.id == team.ball_controler else 0
+        stand_off_value = squash(dist(team.ball_controler.loc, r.loc), stand_off_radius) * stand_off_value
             
         '''if r.id == 1:
             print(shot_likelyhood * shot_value, cell_value,
@@ -71,14 +77,19 @@ def evaluate_robots(team, best_reciever_index):
                         controler_value, fear_value)
         '''
         raw_values.append(shot_likelyhood * shot_value + cell_value +
-                        down_field_value + controler_value + fear_value)
+                        down_field_value + controler_value + fear_value +
+                        stand_off_value)
      
     # share values between connected allies. Will boost the value of
     # robots with passes to other robots, but not isolated robots.
     highest_value_reciever = -1000 #very negative number
     values = [v for v in raw_values]
     for r in team.allies:
-        worst, _ = worst_intercept(team.game.ball.loc, r.loc, team.blocker_enemies)
+        extrapolated_position = r.loc + r.velocity * LEAD_FACTOR
+        worst, _ = worst_intercept(team.game.ball.loc, extrapolated_position, team.blocker_enemies)
+        if worst is not None and abs(worst) < min_pass_margin:
+            values[r.id] = 0
+            continue
         pass_angle = abs(min_angle(angle_to(r.loc, team.game.ball.loc) - team.ball_controler.rot))
         alignment_factor = (1 - squash(pass_angle, np.pi)) * alignment_weight + 1 - alignment_weight
         pass_likelyhood = interpret_intercept(worst) * alignment_factor
@@ -102,9 +113,9 @@ def evaluate_robots(team, best_reciever_index):
     team.prints = []
     for v, a in zip(values, team.allies):
         if v == max(values):
-            team.prints.append((a.loc, -v/150))
+            team.prints.append((a.loc, -v/50))
         else:
-            team.prints.append((a.loc, v/150))
+            team.prints.append((a.loc, v/50))
 
     return values, best_reciever_index
 

@@ -13,6 +13,7 @@ from evaluate_robots import evaluate_robots
 sys.path.insert(0, dirname+'/..')
 from pygame_simulator.PySim_noise import PYsim
 from basic_skills.source.helper_functions import angle_to
+from basic_skills.source.worst_intercept import worst_intercept
 
 if __name__ == "__main__":
     game = PYsim(6)
@@ -32,6 +33,9 @@ if __name__ == "__main__":
         _, _, done = game.step(key_points=yellow_team.prints)
 
         values, best_reciever_index = evaluate_robots(yellow_team, best_reciever_index)
+
+        goal_shot_safety, _ = worst_intercept(yellow_team.allies[0].loc, yellow_team.enemy_goal, yellow_team.enemies)
+        #print("goal shot", goal_shot_safety, _)
 
         '''
         select teams with Y key (yellow)
@@ -67,21 +71,25 @@ if __name__ == "__main__":
                     select_blue = False
             if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.MOUSEMOTION:
                 pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
+
+                mouse_pos = pygame.mouse.get_pos()
+                mouse_pos = game.convert_to_field_position(mouse_pos)
+
                 # left mouse button
                 if pressed1:
-                    mouse_pos = pygame.mouse.get_pos()
-                    mouse_pos = game.convert_to_field_position(mouse_pos)
                     if select_blue:
                         game.blue_robots_internal[select_id].loc = mouse_pos
                     else:
                         game.yellow_robots_internal[select_id].loc = mouse_pos
 
                 if pressed3:
-                    mouse_pos = pygame.mouse.get_pos()
-                    mouse_pos = game.convert_to_field_position(mouse_pos)
                     if select_blue:
                         mouse_angle = angle_to(mouse_pos, game.blue_robots_internal[select_id].loc)
                         game.blue_robots_internal[select_id].rot = mouse_angle
                     else:
                         mouse_angle = angle_to(mouse_pos, game.yellow_robots_internal[select_id].loc)
                         game.yellow_robots_internal[select_id].rot = mouse_angle
+
+                if pressed2:
+                    game.ball_internal.loc = mouse_pos
+                    game.ball_internal.velocity = np.array([0,0])

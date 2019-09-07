@@ -9,74 +9,76 @@ from basic_skills.source.robot import robot
 from basic_skills.source.InterceptBall import InterceptBall
 from basic_skills.source.GetOpen import Striker, Fielder
 from basic_skills.source.PassTo import PassTo
-from basic_skills.source.helper_functions import travel_time, dist
+from basic_skills.source.helper_functions import travel_time, dist, angle_to
 
 class team:
     def __init__(self, game, is_blue):
         self.is_blue = is_blue
         self.game = game
-        self.blocker_enemies = [robot(not is_blue, -1, None) for _ in range(4)]
+        self.blocker_enemies = [robot(not is_blue, -1, None) for _ in range(2)]
         if is_blue:
             self.allies = game.blue_robots
             self.enemies = game.yellow_robots
             self.my_goal = game.blue_goal_loc
             self.enemy_goal = game.yellow_goal_loc
-            self.blocker_enemies[2].loc = self.enemy_goal + np.array([240, -self.game.goal_height/2 - 500])
-            self.blocker_enemies[3].loc = self.enemy_goal + np.array([240, -self.game.goal_height/2 + 500])
+            #self.blocker_enemies[2].loc = self.enemy_goal + np.array([240, -self.game.goal_height/2 - 500])
+            #self.blocker_enemies[3].loc = self.enemy_goal + np.array([240, -self.game.goal_height/2 + 500])
         else:
             self.enemies = game.blue_robots
             self.allies = game.yellow_robots
             self.my_goal = game.yellow_goal_loc
             self.enemy_goal = game.blue_goal_loc
-            self.blocker_enemies[2].loc = self.enemy_goal + np.array([-240, -self.game.goal_height/2 - 500])
-            self.blocker_enemies[3].loc = self.enemy_goal + np.array([-240, -self.game.goal_height/2 + 500])
+            #self.blocker_enemies[2].loc = self.enemy_goal + np.array([-240, -self.game.goal_height/2 - 500])
+            #self.blocker_enemies[3].loc = self.enemy_goal + np.array([-240, -self.game.goal_height/2 + 500])
         self.blocker_enemies[0].loc = self.enemy_goal + np.array([0, self.game.goal_height/2 + 500])
         self.blocker_enemies[1].loc = self.enemy_goal + np.array([0, -self.game.goal_height/2 - 500])
         self.blocker_enemies.extend(self.enemies)
         self.goalie = self.allies[-1]
         self.field_players = self.allies[:-1]
 
-        self.ball_controler = -1
-        self.ball_control_radius = 250
-        self.ball_control_frames = 10
-        self.ball_control_votes = 0
+        self.ball_controler = None
+        self.ball_control_radius = 300
+        self.ball_uncontrol_radius = 600
+        self.ball_control_frames = 5
+        self.ball_controler_votes = 0
+        self.self_favoring_factor = 10
+        self.angle_control_factor = 40
 
         self.pass_action = PassTo()
-        self.intercept_action = InterceptBall()
         
         self.prints = []
     def update(self):
         # update ball_controler
-        ball_controler = -1
+        ball_controler = None
         best = self.ball_control_radius
         for a in self.allies:
-            distance = dist(a.loc, self.game.ball.loc)
+            distance = dist(a.loc, self.game.ball.loc) + abs(angle_to(a.loc, self.game.ball.loc) - a.rot)*self.angle_control_factor - self.self_favoring_factor
             if distance < best:
                 ball_controler = a
                 best = distance
 
         for e in self.enemies:
-            distance = dist(e.loc, self.game.ball.loc)
+            distance = dist(e.loc, self.game.ball.loc) + abs(angle_to(a.loc, self.game.ball.loc) - a.rot)*self.angle_control_factor
             if distance < best:
                 ball_controler = e
                 best = distance
 
-        if ball_controler != self.ball_controler:
+        
+        if best >= self.ball_uncontrol_radius:
+            self.ball_controler = None
+            print("free")
+        elif ball_controler != self.ball_controler:
             self.ball_controler_votes += 1
-            if self.ball_control_votes >= self.ball_control_votes:
+            if self.ball_controler_votes >= self.ball_control_frames:
+                if ball_controler is None:
+                    print("free")
+                else:
+                    print("belongs", "blue" if ball_controler.is_blue else "yellow")
                 self.ball_controler = ball_controler
+        elif self.ball_controler is None and self.ball_controler_votes > 0:
+            self.ball_controler_votes -= 1
         else:
             self.ball_controler_votes = 0
-
-def get_closest(enemy, free_allies):
-    best_dist = travel_time(enemy, free_allies[0].loc)
-    best = free_allies[0]
-    for fa in free_allies[1:]:
-        dist = travel_time(enemy, fa.loc)
-        if dist < best_dist:
-            best = fa
-            best_dist = dist
-    return best
 
 def assign_Strikers_and_Fielders(team, free_allies):
     '''
@@ -84,13 +86,13 @@ def assign_Strikers_and_Fielders(team, free_allies):
     '''
     ind = 0
     for i in free_allies[:2]:
-        striker_action = Striker(team.ball_controler, team.enemy_goal,
+        striker_action = Striker(team.game.ball, team.enemy_goal,
                                   team.blocker_enemies, team.allies)
         team.game.add_action(striker_action, i.id, False)
         ind += 1
         
     for i in free_allies[2:]:
-        fielder_action = Fielder(team.ball_controler, free_allies[ind - 2], 
+        fielder_action = Fielder(team.game.ball, free_allies[ind - 2], 
                                   team.blocker_enemies, team.allies)
         team.game.add_action(fielder_action, i.id, False)
         ind += 1
