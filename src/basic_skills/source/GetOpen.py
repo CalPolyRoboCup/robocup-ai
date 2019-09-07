@@ -5,7 +5,8 @@ import os
 import time
 dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname)
-from helper_functions import mag, min_angle, drop_perpendicular, dist, angle_to, rotate_vector, scale_to, squash
+from helper_functions import (mag, min_angle, drop_perpendicular,
+        dist, angle_to, rotate_vector, scale_to, squash, get_closest)
 from action import action
 from MoveTo import MoveTo
 from DribbleBall import DribbleBall
@@ -43,8 +44,10 @@ class GetOpen(MoveTo):
 
         # positioning_factors.
         self.allie_avoidance_factor = 800
-        self.enemy_avoidance_factor = 0.2
-        self.point_proximity_factor = 2000
+        self.enemy_avoidance_factor = 0.5
+        self.stand_off_radius = 4000
+        self.enemy_threat_range = 1300
+        #self.point_proximity_factor = 4000
 
     def add(self, robot, game):
         MoveTo.add(self, robot, game)
@@ -83,46 +86,41 @@ class GetOpen(MoveTo):
             After that is all done make sure you aren't moving close
             to any of your allies
         '''
-        improvements = location
-        improv_weight = 1
+        improvements = np.array([0,0])
+        improv_weight = 0
         pind = 0
         score = 0
         for p in self.points:
-            worst, self.last_intercept_id[pind] = worst_intercept(location, p, self.enemies, self.last_intercept_id[pind])
+            worst, self.last_intercept_id[pind] = worst_intercept(location, p, self.enemies, self.last_intercept_id[pind], ball_to_robot_speed=0)
             importance = 0.1
-            improvement = np.array([0,0])
             '''
             Something is happening
             rotate away from worst enemy
             rotate farthur for worse interceptions
             '''
             if worst is not None:
-                importance += (1 - squash(abs(worst)))
+                importance += (1 - squash(abs(worst), self.enemy_threat_range)) * self.weights[pind]
                 point_vector = location - p
-                straff_angle = self.enemy_avoidance_factor * importance * self.weights[pind]
+                straff_angle = self.enemy_avoidance_factor * importance
                 if worst <= 0:
                     improvement = rotate_vector(point_vector, straff_angle)
                 else:
                     improvement = rotate_vector(point_vector, -straff_angle)
+                improvement = scale_to(improvement, self.stand_off_radius)
                 improvement = improvement + p
-
-            '''
-            prefer to be close to the points
-            '''
-            tuck_factor = self.point_proximity_factor * (1 - importance) * self.weights[pind]
-            improvement = improvement + scale_to(p - location, tuck_factor)
-
-            improvements = improvements + improvement * importance
-            improv_weight += importance
+            else:
+                improvement = scale_to(location - p, self.stand_off_radius)
 
             # debug
             self.prints[pind] = (improvement, 10*importance)
             
             if worst is None:
-                score += 1
+                score += self.weights[pind]
             else:
-                score += squash(abs(worst), 600)
+                score += squash(abs(worst), self.enemy_threat_range) * self.weights[pind]
             pind += 1
+            improvements = improvements + improvement * importance
+            improv_weight += importance
         
         '''
         weighted average of improvements
@@ -169,42 +167,51 @@ class GetOpenHolistic(GetOpen):
         GetOpen_at a better location
         '''
         self.freakout = 0
-        self.freakout_count = 20
-        self.freakout_threashold = 1.3
+        self.freakout_count = 5
+        self.freakout_threashold = 0.6
         self.repositioning = False
 
-        self.repositiong_cycles = 10
-        self.repositioning_factor = 5
+        self.repositiong_cycles = 5
         self.repositioning_radius = 200
     
-    def GetOpen_at(self, location):
+    def GetOpen_from(self, location):
         '''
         start at location.
         Move a bit towards where you are
         Take repositioning cycles steps using the GetOpen 
             procedure and boost the step size by repositioning factor
         '''
-        location = location + scale_to(self.robot.loc - location, self.repositioning_radius)
+        #location = location + scale_to(self.robot.loc - location, self.repositioning_radius)
         for _ in range(self.repositiong_cycles):
             new_location, _ = self.AnalyzePoint(location)
-            location = location + self.repositioning_factor * (new_location - location)
+            location = location + (new_location - location)
         return location
+
+    def GetOpen_at(self, location):
+        good_location = self.GetOpen_from(location)
+        self.set_target(good_location, self.robot.rot)
+        #print("freakout", self.robot.id, self.target_loc, good_location)
+        self.repositioning = True
 
     def run(self):
         if not self.repositioning:
             if self.current_score < self.freakout_threashold:
                 self.freakout += 1
             if self.freakout >= self.freakout_count:
-                good_location = self.GetOpen_at(self.points[0])
-                self.set_target(good_location, self.robot.rot)
-                print("freakout", self.robot.id, self.target_loc, good_location)
-                self.repositioning = True
+                self.GetOpen_at((self.points[0] + self.robot.loc) / 2)  
 
         if self.repositioning:
+            self.freakout -= 1
+            if (self.freakout <= 0):
+                _, self.current_score = self.AnalyzePoint(self.robot.loc)
+                if self.current_score < self.freakout_threashold:
+                    self.freakout = self.freakout_count
+                    self.GetOpen_at((self.points[0] + self.robot.loc) / 2)  
             if dist(self.robot.loc, self.target_loc) < self.repositioning_radius:
                 self.repositioning = False
                 self.freakout = 0
-                print("freakout done", self.robot.id)
+                #print("freakout done", self.robot.id)
+            self.target_rot = angle_to(self.game.ball.loc, self.robot.loc)
             return MoveTo.run(self)
         return GetOpen.run(self)
 
@@ -213,7 +220,7 @@ class Striker(GetOpenHolistic):
     forward support class. Gets open for ball controler and shot at the goal
     '''
     def __init__(self, ball_controller, goal, enemies, allies):
-        GetOpenHolistic.__init__(self, [], [0.6, 0.4], enemies, allies)
+        GetOpenHolistic.__init__(self, [], [0.9, 0.1], enemies, allies)
         self.goal = goal
         self.ball_controller = ball_controller
         self.allies = allies
@@ -236,7 +243,7 @@ class Fielder(GetOpenHolistic):
     and anouther allied robot (currently one of the Strikers)
     '''
     def __init__(self, ball_controller, target_to_support, enemies, allies):
-        GetOpenHolistic.__init__(self, [], [0.6, 0.4], enemies, allies)
+        GetOpenHolistic.__init__(self, [], [0.9, 0.1], enemies, allies)
         self.target_to_support = target_to_support
         self.ball_controller = ball_controller
         self.allies = allies
@@ -267,9 +274,8 @@ class GetOpenForKick(GetOpen):
         self.enemies = enemies
         self.support_robots = support_robots
         
-        self.freakout_weight = -10
-        self.lag_factor = 0.5
-        self.depth_weight = 0.01
+        self.run_away_factor = 1500
+        #self.pull_in_factor = 1500
 
     def update_points(self):
         for i in range(len(self.support_robots)):
@@ -282,5 +288,15 @@ class GetOpenForKick(GetOpen):
     def run(self):
         self.update_points()
         target_loc, _ = self.get_targets()
+        nearest = get_closest(self.robot.loc, self.enemies)
+        n_dist = dist(nearest.loc, self.robot.loc)
+        if n_dist < self.run_away_factor:
+            target_loc = target_loc + scale_to(self.robot.loc - nearest.loc, self.run_away_factor)
+        
+        '''nearest = get_closest(self.robot.loc, self.enemies)
+        n_dist = dist(nearest.loc, self.robot.loc)
+        if n_dist < self.run_away_factor:
+            target_loc = target_loc - scale_to(self.robot.loc - nearest.loc, self.pull_in_factor)'''
+
         DribbleBall.set_target(self, target_loc)
         return DribbleBall.run(self)

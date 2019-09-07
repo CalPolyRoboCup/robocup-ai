@@ -31,8 +31,7 @@ returns:
                     block a shot from location to p. None if no enemy can
                     block the shot
 '''
-def worst_intercept(location, target, enemies, preference_id = None):
-    ball_speed = 1000
+def worst_intercept(location, target, enemies, preference_id = None, ball_to_robot_speed = 3):
     sticky_factor = 500
     worst = None
     first = True
@@ -60,7 +59,8 @@ def worst_intercept(location, target, enemies, preference_id = None):
 
             # scale down intercept_dist
             intercept_dist = local[1]
-            sign_threshold_subtract(intercept_dist, local[0] / ball_speed)
+            if ball_to_robot_speed != 0:
+                sign_threshold_subtract(intercept_dist, local[0] / ball_to_robot_speed)
             if i == preference_id:
                 sign_threshold_subtract(intercept_dist, sticky_factor)
                         

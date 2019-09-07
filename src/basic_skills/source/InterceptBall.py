@@ -7,7 +7,6 @@ dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname)
 from action import action
 from MoveTo import MoveTo
-from OrbitBall import OrbitBall
 from helper_functions import (mag, scale_to, dist, 
         min_angle, drop_perpendicular, normalize_angle,
         travel_time, rotate_vector, angle_of, mag_with,
@@ -19,20 +18,20 @@ from helper_functions import (mag, scale_to, dist,
 class InterceptBall(MoveTo):
     def __init__(self):
         MoveTo.__init__(self)
-        
+
         #bounds for simple cases that can be solved easily
-        self.slow_speed = 200
+        self.slow_speed = 300
         
         #positioning constants
-        self.offset = 115
-        self.sweep_arch = math.pi/4
-        self.sweep_radius = 2500
-        self.spiral_factor = 0.3
+        self.offset = 125
+        self.sweep_radius = 600
+        self.spiral_factor = 0.8
+        self.close_in_factor = 10
 
     '''
     if the ball is moving slowly - move to it
     if the ball is comming towards us - get on the path to catch it
-    if the ball is past us - chase after it
+    if the ball is moving away from us - run around it so that it is moving towards us
     '''
     def run(self):
         ball = self.game.ball
@@ -49,22 +48,30 @@ class InterceptBall(MoveTo):
         drop_loc = drop_perpendicular(self.robot.loc, ball.loc, ball.velocity)
         ball_closing_velocity = mag_with(drop_loc - ball.loc, ball.velocity)
         if ball_closing_velocity > 0:
-            delay_time = travel_time(self.robot, drop_loc)
             target_loc = drop_loc
-            target_loc = target_loc + ball.velocity * delay_time
+            if dist(target_loc, ball.loc) > self.sweep_radius:
+                robot_travel_time = dist(drop_loc, self.robot.loc) * self.close_in_factor
+                ball_travel_time = dist(drop_loc, ball.loc)
+                target_loc = target_loc + scale_to(ball.velocity, (robot_travel_time - ball_travel_time)/10)
             loc_mag += 1
 
-        # if the ball got past us
+        # if the ball is moving away from us
         # sweep around it so we don't hit it
-        dash_mag = (-ball_closing_velocity - self.sweep_radius) / self.sweep_radius
-        if dash_mag > 0:
+        # highly similar to the orbit ball code
+        # tries to get infront of the ball so that
+        # the normal intercept will work
+        dash_mag = (-ball_closing_velocity + self.sweep_radius * (1 - self.spiral_factor))
+        if dash_mag > 0 and mag(ball.velocity) > self.slow_speed:
             sweep_vec = self.robot.loc - ball.loc
+            #sweep_vec = scale_to(sweep_vec, self.sweep_radius / (1 - self.spiral_factor))
             target_vec = ball.velocity
             current_angle = angle_of(sweep_vec)
             target_angle = angle_of(target_vec)
-            sweep_vec = rotate_vector(sweep_vec, self.spiral_factor*min_angle(current_angle - target_angle))
-            sweep_mag = (1 - self.spiral_factor) * mag(sweep_vec) + self.spiral_factor * self.offset
-            sweep_vec = scale_to(sweep_vec, sweep_mag)
+            error_angle = min_angle(current_angle - target_angle)
+            sweep_angle = -np.clip(error_angle, -self.spiral_factor, self.spiral_factor)
+            sweep_vec = rotate_vector(sweep_vec, sweep_angle)
+            sweep_factor = abs(error_angle) / np.pi
+            sweep_mag = self.sweep_radius * (1 - sweep_factor) + mag(sweep_vec) * sweep_factor
 
             sweep_vec = scale_to(sweep_vec, sweep_mag)
             dash_loc = ball.loc + sweep_vec
@@ -74,10 +81,9 @@ class InterceptBall(MoveTo):
 
         # if the ball is moving slowly
         # move directly to the ball
-        grab_mag = self.slow_speed - mag(ball.velocity)
+        grab_mag = (self.slow_speed - mag(ball.velocity))
         if grab_mag > 0 or loc_mag == 0:
             grab_loc = ball.loc + scale_to(self.robot.loc - ball.loc, self.offset)
-            grab_mag /= self.slow_speed
             target_loc = target_loc + grab_loc * grab_mag
             loc_mag += grab_mag
 

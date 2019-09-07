@@ -5,31 +5,30 @@ import math
 dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname)
 from action import action
-from OrbitBall import OrbitBall
-from helper_functions import mag, put_in_bounds, normalize_angle
+from DribbleBall import DribbleBall
+from helper_functions import mag, put_in_bounds, angle_of
 
-class KickTo(OrbitBall):
-    def __init__(self, kick_target = None, offset = 125, epsilon = 0.06):
-        OrbitBall.__init__(self, None, offset)
-        self.kick_target = kick_target
-        
+class KickTo(DribbleBall):
+    def __init__(self, kick_target = None, deliberation_time = 13, epsilon = 0.05):
+        DribbleBall.__init__(self)
+        #don't push the ball
+        self.on_angle_factor = 0.1
+
         # maximum angle in radians between current kick vector and target kick vector that
         # is acceptable for a pass
-        self.epsilon = epsilon
+        self.pass_epsilon = epsilon
         
         # we wait a few cycles once the ball is in position
         # to ensure the ball alignment with the kicker is good
         self.deliberation = 0
-        self.deliberation_time = 15
+        self.deliberation_time = deliberation_time
         
     def run(self):
-        self.target_loc = self.kick_target
         
-        tvec = self.target_loc - self.robot.loc
-        bvec = self.game.ball.loc - self.robot.loc
-        
+        tvec = self.target_pos - self.robot.loc
+        bvec = self.robot.facing#self.game.ball.loc - self.robot.loc
         # if we have the ball in position
-        if abs(normalize_angle(math.atan2(tvec[1], tvec[0]) - math.atan2(bvec[1], bvec[0]))) < self.epsilon and self.game.ball.controler != False:
+        if abs(angle_of(bvec) - angle_of(tvec)) < self.pass_epsilon and self.game.ball.controler != False:
             # wait a bit then kick
             self.deliberation -= 1
             if self.deliberation <= 0:
@@ -42,7 +41,7 @@ class KickTo(OrbitBall):
             
         # turn and face the target loc
         # note this is dependent on self.target_loc being set
-        actions = OrbitBall.run(self)
+        actions = DribbleBall.run(self)
         return actions
         
     def done(self):
@@ -53,16 +52,20 @@ class KickTo(OrbitBall):
             return 1
         return 0
 
+
+LEAD_FACTOR = 2E-4
 class PassTo(KickTo):
-    def __init__(self, target_robot = None):
-        KickTo.__init__(self)
+    def __init__(self, target_robot = None, deliberation_time = 6, epsilon = 0.1, lead_factor = LEAD_FACTOR):
+        KickTo.__init__(self, None, deliberation_time, epsilon)
         self.target_robot = target_robot
 
         # how much we lead the target we are kicking to
-        self.lead_factor = 0.0004
+        self.lead_factor = lead_factor
         
     def run(self):
         # lead the target we are passing to
         velocity_mod = self.target_robot.velocity * self.lead_factor * mag(self.target_robot.loc - self.robot.loc)
-        self.kick_target = self.target_robot.loc + velocity_mod
+        target_pos = self.target_robot.loc + velocity_mod
+        self.target_pos = target_pos
+        self.target_pos, _ = put_in_bounds(self.target_pos)
         return KickTo.run(self)

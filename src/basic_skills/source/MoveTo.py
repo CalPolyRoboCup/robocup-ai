@@ -23,15 +23,15 @@ class MoveTo(action):
         # translational control parameters
         self.translational_control_speed = 150
         self.locP = 60
-        self.locD = 15
+        self.locD = 22
 
         # rotational control parameters
         self.rot_control_speed = 100
-        self.rotP = 150
+        self.rotP = 200
         self.rotD = 50
         
         self.short_planning_distance = 1000
-        self.safety_distance = 300
+        self.safety_distance = 170
 
         self.plan_path = True
 
@@ -62,7 +62,9 @@ class MoveTo(action):
             closest_point = drop_perpendicular(b.loc, self.robot.loc, lvec)
             local_distance = mag_with(closest_point - self.robot.loc, lvec)
             if mag(closest_point - b.loc) < self.safety_distance and local_distance > 0 and local_distance < lmag2:
-                return closest_point + scale_to(closest_point - b.loc, self.safety_distance) + scale_to(self.robot.loc - b.loc, self.safety_distance)
+                avoid_close = scale_to(self.robot.loc - b.loc, self.safety_distance)
+                avoid_far = scale_to(closest_point - b.loc, self.safety_distance)
+                return closest_point + avoid_close + avoid_far
                 
         for b in self.game.yellow_robots:
             if not self.robot.is_blue and b.id == self.robot.id:
@@ -70,15 +72,16 @@ class MoveTo(action):
             closest_point = drop_perpendicular(b.loc, self.robot.loc, lvec)
             local_distance = mag_with(closest_point - self.robot.loc, lvec)
             if mag(closest_point - b.loc) < self.safety_distance and local_distance > 0 and local_distance < lmag2:
-                return closest_point + scale_to(closest_point - b.loc, self.safety_distance) + scale_to(self.robot.loc - b.loc, self.safety_distance)
-        
+                avoid_close = scale_to(self.robot.loc - b.loc, self.safety_distance)
+                avoid_far = scale_to(closest_point - b.loc, self.safety_distance)
+                return closest_point + avoid_close + avoid_far
+
         return planned_target
         
     def plan_for_target(self):
         planned_target = self.collision_avoidance(self.target_loc)
-        target_vec = self.target_loc - self.robot.loc
+        target_vec = planned_target - self.robot.loc
         if mag(target_vec) < self.short_planning_distance * 2:
-            planned_target = self.target_loc
             planned_target, _ = put_in_bounds(planned_target)
         else:
             planned_target = self.robot.loc + target_vec * self.short_planning_distance / mag(target_vec)

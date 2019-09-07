@@ -12,9 +12,9 @@ from helper_functions import mag, convert_local, min_angle
 moves around the ball so that it faces target_loc
 '''
 class OrbitBall(MoveTo):
-    def __init__(self, target_loc = False, offset = 125):
+    def __init__(self, target_pos = False, offset = 115):
         MoveTo.__init__(self)
-        self.target_loc = target_loc
+        self.target_pos = target_pos
         
         #how quickly the robot moves around the ball. Larger is slower
         self.spiral_factor = 0.15
@@ -34,9 +34,16 @@ class OrbitBall(MoveTo):
         
         #how far from the ball we try to get
         self.offset = offset
+
+        self.max_turn_angle = np.pi/4
+
     def add(self, robot, game):
         self.robot = robot
         MoveTo.add(self, robot, game)
+
+    def set_target(self, location):
+        self.target_pos = location
+
     def run(self):
         '''
         we pull in to spiral_factor and rotate around by (1 - spiral_factor)
@@ -51,12 +58,14 @@ class OrbitBall(MoveTo):
         target_loc = robot_vec_scaled * (1 - self.spiral_factor) + self.spiral_factor * robot_vec
         
         #get the angle between where we are relative to the ball and where we would like to be
-        target_vec = ball_extrapolation - self.target_loc
+        target_vec = ball_extrapolation - self.target_pos
         current_angle = -math.atan2(robot_vec[1], robot_vec[0])
         target_angle = math.atan2(-target_vec[1], target_vec[0])
         
         #rotate the vector from the first part by a fraction of the angle we are off by
-        rotation_angle = -min_angle(current_angle - target_angle) * self.rot_spiral_factor
+        rotation_angle = -min_angle(current_angle - target_angle)
+        rotation_angle = np.clip(rotation_angle, -self.max_turn_angle, self.max_turn_angle)
+        rotation_angle *= self.rot_spiral_factor
         orbit_vec = convert_local(target_loc, rotation_angle)
         
         #if we are close to the ball push target location out
@@ -75,7 +84,7 @@ class OrbitBall(MoveTo):
                 move_target += (move_target - self.robot.loc)
         
         #call pid code
-        self.set_target(move_target, target_rot)
+        MoveTo.set_target(self, move_target, target_rot)
         actions = MoveTo.run(self)
         self.actions = actions
         return actions

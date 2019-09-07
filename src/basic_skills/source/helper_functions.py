@@ -94,13 +94,14 @@ def put_out_of_goalie_area(location):
     location (out of goalie box) 
     fixed - was anything done
     '''
+    epsilon = 0.01
     endzone_radius = 1500
     g1v = location - yellow_goal
-    g1vm = mag(g1v)
+    g1vm = mag(g1v) + epsilon
     if g1vm < endzone_radius:
         return yellow_goal + g1v * endzone_radius / g1vm, 1
     g2v = location - blue_goal
-    g2vm = mag(g2v)
+    g2vm = mag(g2v) + epsilon
     if g2vm < endzone_radius:
         return blue_goal + g2v * endzone_radius / g2vm, 1
     return location, 0
@@ -189,3 +190,13 @@ def squash(num, val = 4000):
     if ret > 1:
         ret = 1
     return ret
+
+def get_closest(enemy, robots):
+    best_dist = travel_time(enemy, robots[0].loc)
+    best = robots[0]
+    for fa in robots[1:]:
+        dist = travel_time(enemy, fa.loc)
+        if dist < best_dist:
+            best = fa
+            best_dist = dist
+    return best
