@@ -97,17 +97,17 @@ class PYsim:
         self.kick_width = 70
         
         # kick force
-        self.kick_delta_V = 2300
+        self.kick_delta_V = 2500
         
         # hit box for spinner
-        self.spin_length = 25
+        self.spin_length = 40
         self.spin_width = 100
         
         # spin force when touching
-        self.spin_lin_accel = 5
+        self.spin_lin_accel = 15
         
         # stored spin force after contact broken (leaving it equal to spin_lin_accel works well)
-        self.spin_rot_accel = 5
+        self.spin_rot_accel = 15
         
         # how much acceleration can be stored in spin
         self.max_ball_spin = 4
@@ -116,10 +116,12 @@ class PYsim:
         self.spin_accel_rate = .85
         
         # how fast the current robot velocity changes to the target velocity (0 to 1 inclusive) larger is slower
-        self.accel_rate = .983
+        self.accel_rate = .99
+
+        self.rot_accel_rate = 0.97
         
         # how fast the robot can move
-        self.max_speed = 3000
+        self.max_speed = 800
         
         # how fast the robot can turn (radians)
         self.max_angular_speed = 2
@@ -145,15 +147,17 @@ class PYsim:
         self.rotation_noise = 0
         self.vanish_prob = 0
         
-        self.reset()
+        self.throw_in_max_speed = 500
 
-        self.blue_goal_loc = np.array([-7000,0])
-        self.yellow_goal_loc = np.array([7000,0])
+        self.blue_goal_loc = np.array([-6500,0])
+        self.yellow_goal_loc = np.array([6500,0])
+
+        self.reset()
         
     '''
     brief: place all robots in starting fomation and the ball in the center
     '''
-    def reset(self):
+    def reset(self, toss_in = True):
         for i in range(self.max_bots_per_team):
             self.blue_robots_internal[i].loc = np.array(self.starting_formation[i])
             self.blue_robots_internal[i].rot = 0
@@ -162,7 +166,10 @@ class PYsim:
             self.blue_robots_internal[i].velocity = np.array([0,0])
             self.yellow_robots_internal[i].velocity = np.array([0,0])
         self.ball_internal.loc = np.array([0,0])
-        self.ball_internal.velocity = np.array([0,0])
+        if toss_in:
+            self.ball_internal.velocity = np.random.uniform(-self.throw_in_max_speed, self.throw_in_max_speed,[2])
+        else:
+            self.ball_internal.velocity = np.array([0,0])
         
     '''
     brief - convert a screen pos to a field location
@@ -261,7 +268,7 @@ class PYsim:
             robot.kick_cooldown = self.kick_cd
             if (robot_local_ball_loc[0] > 0 and robot_local_ball_loc[0] < self.robot_radius + self.kick_length + self.ball_radius
                     and abs(robot_local_ball_loc[1]) < self.kick_width/2):
-                print("kick worked")
+                #print("kick worked")
                 self.ball_internal.velocity = self.ball_internal.velocity + self.kick_delta_V * np.array([np.cos(-robot.rot), np.sin(-robot.rot)])
         
     '''
@@ -276,7 +283,7 @@ class PYsim:
     def update_bot_movement(self, robot, norm_vel, tang_vel, rot_vel, delta_time):
         
         robot.velocity = robot.velocity*self.accel_rate + convert_local(np.array([norm_vel, tang_vel])*PYsim.action_scaling_constant, robot.rot) * (1-self.accel_rate)
-        robot.rot_vel = robot.rot_vel*self.accel_rate + rot_vel * (1-self.accel_rate)
+        robot.rot_vel = robot.rot_vel*self.rot_accel_rate + rot_vel * (1-self.rot_accel_rate)
         
         #limit max speed
         if mag(robot.velocity) > self.max_speed:
@@ -545,7 +552,7 @@ class PYsim:
                 if event.type ==  pygame.KEYDOWN or event.type ==  pygame.KEYUP:
                     keys = pygame.key.get_pressed()
                     #press r-key to reset
-                    if keys[K_r]:
+                    if keys[pygame.K_r]:
                         game.reset()
             if framerate != None:
                 new_time = clock.tick()
