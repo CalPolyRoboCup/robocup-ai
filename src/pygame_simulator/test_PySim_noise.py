@@ -3,12 +3,10 @@ import sys
 import time
 dirname = os.path.dirname(__file__)
 sys.path.insert(0, dirname+'/..')
-from basic_skills.source.robot import *
-from basic_skills.source.action import *
+from basic_skills.source.robot import robot
+from basic_skills.source.action import action
 from PySim_noise import PYsim
 import pygame
-
-from pygame.locals import *
 
 
 #test action
@@ -35,19 +33,19 @@ class keyboard_control(action):
         self.tang_vel = 0
         self.rot_vel = 0
         self.kick = 0
-        if keys[K_SPACE]:
+        if keys[pygame.K_SPACE]:
             self.kick = 1
-        if keys[K_d]:
+        if keys[pygame.K_d]:
             self.norm_vel = -self.speed
-        elif keys[K_a]:
+        elif keys[pygame.K_a]:
             self.norm_vel = self.speed
-        if keys[K_w]:
+        if keys[pygame.K_w]:
             self.tang_vel = self.speed
-        elif keys[K_s]:
+        elif keys[pygame.K_s]:
             self.tang_vel = -self.speed
-        if keys[K_q]:
+        if keys[pygame.K_q]:
             self.rot_vel = self.rot_speed
-        elif keys[K_e]:
+        elif keys[pygame.K_e]:
             self.rot_vel = -self.rot_speed
     def run(self):
         '''
@@ -71,10 +69,10 @@ for b in range(len(game.yellow_robots)):
     game.add_action(key_action, b, is_blue = True)
 while 1:
     for event in pygame.event.get():
-        if event.type == QUIT:
+        if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        if event.type == KEYDOWN or event.type == KEYUP:
+        if event.type == pygame.KEYDOWN or event.type == pygame.KEYUP:
             keys = pygame.key.get_pressed()
             key_action.keypress_update(keys)
     new_time = clock.tick()
