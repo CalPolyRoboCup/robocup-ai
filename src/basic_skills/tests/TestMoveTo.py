@@ -17,10 +17,10 @@ from matplotlib.widgets import Slider, Button, RadioButtons
 def PID_tuning_tool(move_action):
   plt.figure(2)
   Pax = plt.axes([0.25, 0.1, 0.65, 0.03])
-  Psl = Slider(Pax, "translation - P", 10, 50, valinit=move_action.locP)
+  Psl = Slider(Pax, "translation - P", 10, 100, valinit=move_action.locP)
 
   Dax = plt.axes([0.25, 0.15, 0.65, 0.03])
-  Dsl = Slider(Dax, "translation - D", 7, 40, valinit=move_action.locD)
+  Dsl = Slider(Dax, "translation - D", 10, 100, valinit=move_action.locD)
   
   RPax = plt.axes([0.25, 0.2, 0.65, 0.03])
   RPsl = Slider(RPax, "rotational - P", 40, 200, valinit=move_action.rotP)

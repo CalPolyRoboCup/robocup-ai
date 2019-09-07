@@ -18,28 +18,28 @@ if __name__ == "__main__":
     
     '''
     Create ball controller
-    assumes yellow_robot 1 has the highest pass values and yellow_robot 0 has the ball or can easily get the ball
+    assumes blue_robot 1 has the highest pass values and blue_robot 0 has the ball or can easily get the ball
     '''
-    game.add_action(GetOpenForKick([game.yellow_robots[1], game.yellow_robots[3]], game.blue_robots, game.yellow_robots), 0, False)
+    game.add_action(GetOpenForKick([game.blue_robots[1], game.blue_robots[3]], game.yellow_robots, game.blue_robots), 0, True)
     
     '''
     Create the Strikers
-    assumes yellow_robot 0 has the ball and [-5000,0] is the goal
+    assumes blue_robot 0 has the ball and [-5000,0] is the goal
     '''
     
     blocker_enemies = [robot(True, -1, None), robot(True, -1, None)]
-    enemy_goal = game.blue_goal_loc
+    enemy_goal = game.yellow_goal_loc
     blocker_enemies[0].loc = enemy_goal + np.array([0, game.goal_height/2 + 500])
     blocker_enemies[1].loc = enemy_goal + np.array([0, -game.goal_height/2 - 500])
-    for i in game.yellow_robots[1:3]:
-        game.add_action(Striker(game.yellow_robots[0], game.blue_goal_loc, game.blue_robots + blocker_enemies, game.yellow_robots), i.id, False)
+    for i in game.blue_robots[1:3]:
+        game.add_action(Striker(game.blue_robots[0], game.yellow_goal_loc, game.yellow_robots + blocker_enemies, game.blue_robots), i.id, True)
             
     '''
     Create the Fielders
-    assumes yellow_robot 0 has the ball and yellow_robot i.id - 2 is a Striker
+    assumes blue_robot 0 has the ball and blue_robot i.id - 2 is a Striker
     '''
-    for i in game.yellow_robots[3:5]:
-        game.add_action(Fielder(game.yellow_robots[0], game.yellow_robots[i.id - 2], game.blue_robots + blocker_enemies, game.yellow_robots), i.id, False)
+    for i in game.blue_robots[3:5]:
+        game.add_action(Fielder(game.blue_robots[0], game.blue_robots[i.id - 2], game.yellow_robots + blocker_enemies, game.blue_robots), i.id, True)
         
         
     while 1:
@@ -69,8 +69,8 @@ if __name__ == "__main__":
             game.yellow_robots_internal[0].loc = game.convert_to_field_position(pygame.mouse.get_pos())
 
         new_time = clock.tick()
-        if game.yellow_robots[0].action.target_pos is not None:
-            game.step(key_points=[game.yellow_robots[0].action.target_pos])
+        if game.blue_robots[0].action.target_pos is not None:
+            game.step(key_points=game.blue_robots[1].action.prints)
         else:
             game.step()
         ttime = new_time

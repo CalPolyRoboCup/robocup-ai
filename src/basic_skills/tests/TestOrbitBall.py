@@ -31,17 +31,12 @@ if __name__ == "__main__":
         pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
         mouse_pos = game.convert_to_field_position(pygame.mouse.get_pos())
 
-        # place ball with left mouse
         if pressed1:
           game.ball_internal.loc = mouse_pos
           game.ball_internal.velocity = np.array([0,0])
           
-        # throw ball with right mouse
         if pressed3:
-          move_action.set_target(mouse_pos, 0)
-          
-    
-    game.blue_robots[0].action.target_loc = game.yellow_robots[0].loc + game.yellow_robots[0].velocity
+          orbit_action.set_target(mouse_pos)
         
     new_time = clock.tick()
     if game.yellow_robots[0].action.done():

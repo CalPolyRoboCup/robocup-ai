@@ -37,7 +37,7 @@ while 1:
     tick_time += 1
     
     # choose new locations to dribble to
-    game.blue_robots[0].action.target_pos = target_loc
+    game.blue_robots[0].action.set_target(target_loc)
         
             
     # run the game and show target location
