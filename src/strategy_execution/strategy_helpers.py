@@ -3,7 +3,7 @@ import math
 import time
 import sys
 import os
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname+'/..')
 from basic_skills.source.robot import robot
 from basic_skills.source.InterceptBall import InterceptBall
@@ -67,18 +67,8 @@ class team:
         if best >= self.ball_uncontrol_radius:
             self.ball_controler = None
             print("free")
-        elif ball_controler != self.ball_controler:
-            self.ball_controler_votes += 1
-            if self.ball_controler_votes >= self.ball_control_frames:
-                if ball_controler is None:
-                    print("free")
-                else:
-                    print("belongs", "blue" if ball_controler.is_blue else "yellow")
-                self.ball_controler = ball_controler
-        elif self.ball_controler is None and self.ball_controler_votes > 0:
-            self.ball_controler_votes -= 1
         else:
-            self.ball_controler_votes = 0
+            self.ball_controler = ball_controler
 
 def assign_Strikers_and_Fielders(team, free_allies):
     '''
@@ -88,13 +78,13 @@ def assign_Strikers_and_Fielders(team, free_allies):
     for i in free_allies[:2]:
         striker_action = Striker(team.game.ball, team.enemy_goal,
                                   team.blocker_enemies, team.allies)
-        team.game.add_action(striker_action, i.id, False)
+        team.game.add_action(striker_action, i.id, team.is_blue)
         ind += 1
         
     for i in free_allies[2:]:
         fielder_action = Fielder(team.game.ball, free_allies[ind - 2], 
                                   team.blocker_enemies, team.allies)
-        team.game.add_action(fielder_action, i.id, False)
+        team.game.add_action(fielder_action, i.id, team.is_blue)
         ind += 1
 
         

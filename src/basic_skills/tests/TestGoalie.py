@@ -1,7 +1,7 @@
 import sys
 import os
 import pygame
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname+'/../..')
 import numpy as np
 from basic_skills.source.Goalie import Goalie

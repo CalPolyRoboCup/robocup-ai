@@ -1,11 +1,11 @@
 import sys
 import os
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from state_machine import state
 from strategy_numbers import *
 
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname+'/..')
 from basic_skills.source.InterceptBall import InterceptBall
 from basic_skills.source.GetOpen import Fielder

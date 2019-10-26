@@ -1,6 +1,6 @@
 import sys
 import os
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from helper_functions import min_angle, rotate_vector
 import numpy as np

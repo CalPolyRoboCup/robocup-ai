@@ -1,12 +1,12 @@
 import sys
 import os
 import numpy as np
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from state_machine import state
 from strategy_numbers import *
 
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname+'/..')
 from basic_skills.source.InterceptBall import InterceptBall
 from basic_skills.source.Goalie import Goalie
@@ -36,7 +36,6 @@ class neutral_strategy(state):
         for fa in self.team.allies:
             if fa.id != closest.id:
                 free_allies.append(fa)
-                break
                 
         # other robots spread out
         assign_Strikers_and_Fielders(self.team, free_allies)

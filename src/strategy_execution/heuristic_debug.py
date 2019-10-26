@@ -5,7 +5,7 @@ import sys
 import os
 import pygame
 
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from strategy_helpers import team
 from evaluate_robots import evaluate_robots

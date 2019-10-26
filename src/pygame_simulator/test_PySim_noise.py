@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname+'/..')
 from basic_skills.source.robot import robot
 from basic_skills.source.action import action

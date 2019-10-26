@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 import pygame
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname+'/../..')
 
 from pygame_simulator.PySim_noise import PYsim

@@ -1,7 +1,7 @@
 import sys
 import os
 import numpy as np
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from state_machine import state
 from strategy_helpers import assign_Strikers_and_Fielders

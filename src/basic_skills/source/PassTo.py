@@ -2,15 +2,15 @@ import numpy as np
 import sys
 import os
 import math
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from action import action
 from DribbleBall import DribbleBall
 from helper_functions import mag, put_in_bounds, angle_of
 
 class KickTo(DribbleBall):
-    def __init__(self, kick_target = None, deliberation_time = 13, epsilon = 0.05):
-        DribbleBall.__init__(self)
+    def __init__(self, kick_target, deliberation_time = 13, epsilon = 0.05):
+        DribbleBall.__init__(self, kick_target)
         #don't push the ball
         self.on_angle_factor = 0.1
 
@@ -24,7 +24,6 @@ class KickTo(DribbleBall):
         self.deliberation_time = deliberation_time
         
     def run(self):
-        
         tvec = self.target_pos - self.robot.loc
         bvec = self.robot.facing#self.game.ball.loc - self.robot.loc
         # if we have the ball in position
@@ -53,10 +52,10 @@ class KickTo(DribbleBall):
         return 0
 
 
-LEAD_FACTOR = 2E-4
+LEAD_FACTOR = 5E-4
 class PassTo(KickTo):
-    def __init__(self, target_robot = None, deliberation_time = 6, epsilon = 0.1, lead_factor = LEAD_FACTOR):
-        KickTo.__init__(self, None, deliberation_time, epsilon)
+    def __init__(self, target_robot = None, deliberation_time = 10, epsilon = 0.12, lead_factor = LEAD_FACTOR):
+        KickTo.__init__(self, target_robot, deliberation_time, epsilon)
         self.target_robot = target_robot
 
         # how much we lead the target we are kicking to

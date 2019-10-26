@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import os
 import math
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from action import action
 from MoveTo import MoveTo

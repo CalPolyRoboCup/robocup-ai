@@ -4,7 +4,7 @@ import time
 import sys
 import os
 
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from worst_intercept import worst_intercept
 from strategy_helpers import get_cell

@@ -3,7 +3,7 @@ import math
 import sys
 import os
 import time
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from helper_functions import (mag, min_angle, drop_perpendicular,
         dist, angle_to, rotate_vector, scale_to, squash, get_closest)

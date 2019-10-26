@@ -3,7 +3,7 @@ import sys
 import time
 import numpy as np
 import math
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname+'/..')
 from basic_skills.source.robot import robot
 from basic_skills.source.action import action
@@ -62,7 +62,7 @@ class PYsim:
         self.goal_height = 1500
 
         self.screen = pygame.display.set_mode(self.screen_res, pygame.HWSURFACE, 32)
-        dirname = os.path.dirname(__file__)
+        dirname = os.path.dirname(os.path.abspath(__file__))
         filename = os.path.join(dirname, "../resources/Field.png")
         self.field_image = pygame.image.load(filename).convert_alpha()
         field_scale = self.field_image.get_rect().size * self.screen_res / np.array([1040, 740])
@@ -116,7 +116,7 @@ class PYsim:
         self.spin_accel_rate = .85
         
         # how fast the current robot velocity changes to the target velocity (0 to 1 inclusive) larger is slower
-        self.accel_rate = .99
+        self.accel_rate = .985
 
         self.rot_accel_rate = 0.97
         

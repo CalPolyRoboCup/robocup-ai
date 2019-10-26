@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys
 import os
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname+'/../..')
 from MoveTo import MoveTo
 from helper_functions import mag, drop_perpendicular, angle_to

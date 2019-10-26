@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys
 import os
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dirname)
 from MoveTo import MoveTo
 from helper_functions import mag, min_angle, angle_of, rotate_vector, angle_to, dist, scale_to, FIELD_HEIGTH
@@ -23,12 +23,12 @@ class DribbleBall(MoveTo):
         self.target_pos = target_pos
 
         self.offset = offset
-        self.on_angle_margin = 0.8
+        self.on_angle_margin = 1
         self.on_angle_factor = 3
         self.stop_radius = 300
-        self.ball_lead_factor = 0.2
+        self.ball_lead_factor = 0.1
         self.spiral_factor = 1
-        self.quick_turn_factor = 2
+        self.quick_turn_factor = 400
 
         #don't dribble the ball to the edge of the field or you won't have room to turn around
         self.dribble_bounds = 500
@@ -58,9 +58,9 @@ class DribbleBall(MoveTo):
         target_angle = angle_of(target_vec)
         error_angle = np.clip(min_angle(current_angle - target_angle), -self.spiral_factor, self.spiral_factor)
 
-        #move in towards the ball
+        #move in towards the ball as you get into position
         off_angle_factor = abs(error_angle)/np.pi
-        target_offset = self.offset * (1 - off_angle_factor) + self.quick_turn_factor*mag(robot_vec) * off_angle_factor
+        target_offset = self.offset * (1 - off_angle_factor) + self.quick_turn_factor * off_angle_factor
         target_loc = scale_to(robot_vec, target_offset)
 
         #apply the above operations

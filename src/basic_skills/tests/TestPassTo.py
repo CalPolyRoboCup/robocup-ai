@@ -5,8 +5,9 @@ from matplotlib.widgets import Slider
 import threading
 import pygame
 
-dirname = os.path.dirname(__file__)
-sys.path.insert(0, dirname+'/../..')
+dirname = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(dirname+'/../..')
+print(dirname)
 from basic_skills.source.PassTo import PassTo
 from basic_skills.source.InterceptBall import InterceptBall
 from basic_skills.source.MoveTo import MoveTo
@@ -109,7 +110,7 @@ if __name__ == "__main__":
       capture_ticks -= 1
       if capture_ticks == 0:
         game.add_action(pass_action, 0, passing_robot_is_blue)
-        pass_action.target_robot = moving_robot
+        pass_action.target_robot = None#moving_robot
         print("recieved", passing_robot_is_blue)
         extern_passing = False
       
